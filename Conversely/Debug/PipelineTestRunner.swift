@@ -23,6 +23,18 @@ final class PipelineTestRunner: ObservableObject {
     private let languageA = Locale.Language(identifier: "en-US")
     private let languageB = Locale.Language(identifier: "vi-VN")
 
+    /// Candidates from the Language Management mockup, checked against
+    /// en-US to see which pairs actually have full on-device support —
+    /// PRD §10's "language coverage gaps" risk, worth validating with real
+    /// API calls rather than assumption.
+    private let coverageCandidates: [(name: String, locale: String)] = [
+        ("Vietnamese", "vi-VN"),
+        ("Spanish", "es-ES"),
+        ("French", "fr-FR"),
+        ("German", "de-DE"),
+        ("Japanese", "ja-JP"),
+    ]
+
     func start() {
         translationService.configure(languageA: languageA, languageB: languageB)
         Task { await runTests() }
@@ -36,14 +48,19 @@ final class PipelineTestRunner: ObservableObject {
     private func runTests() async {
         append("Starting pipeline test (en-US <-> vi-VN)")
 
-        let sttAuthorized = await speechRecognitionService.requestAuthorization()
-        append("Speech recognition authorized: \(sttAuthorized)")
-        append("On-device STT supported (en-US): \(speechRecognitionService.supportsOnDeviceRecognition(locale: Locale(identifier: "en-US")))")
-        append("On-device STT supported (vi-VN): \(speechRecognitionService.supportsOnDeviceRecognition(locale: Locale(identifier: "vi-VN")))")
+        append("--- Language coverage sweep (vs. en-US) ---")
+        for candidate in coverageCandidates {
+            let locale = Locale.Language(identifier: candidate.locale)
+            let toStatus = await translationService.checkAvailability(from: languageA, to: locale)
+            let fromStatus = await translationService.checkAvailability(from: locale, to: languageA)
+            let sttSupported = speechRecognitionService.supportsOnDeviceRecognition(locale: Locale(identifier: candidate.locale))
+            append("\(candidate.name): translation en->\(candidate.locale)=\(toStatus), \(candidate.locale)->en=\(fromStatus); on-device STT=\(sttSupported)")
+        }
+        append("--- End coverage sweep ---")
 
-        let micGranted = await audioCaptureService.requestMicrophonePermission()
-        append("Microphone permission granted: \(micGranted)")
-
+        // Translation + TTS next: they don't need an interactive permission
+        // dialog, so they can't get stuck waiting for a tap nobody can give
+        // in an automated run.
         let statusAToB = await translationService.checkAvailability(from: languageA, to: languageB)
         append("Translation availability en->vi: \(statusAToB)")
         let statusBToA = await translationService.checkAvailability(from: languageB, to: languageA)
@@ -67,6 +84,43 @@ final class PipelineTestRunner: ObservableObject {
             append("Translation failed: \(error)")
         }
 
+        // Exercised independently of translation succeeding — TTS doesn't
+        // depend on the Translation framework at all.
+        let bestEnglishVoice = SpeechSynthesisService.bestVoice(for: Locale(identifier: "en-US"))
+        append("Best en-US voice: \(bestEnglishVoice?.name ?? "none found") (quality: \(bestEnglishVoice.map { "\($0.quality)" } ?? "n/a"))")
+        speechSynthesisService.speak("Testing text to speech.", locale: Locale(identifier: "en-US"))
+        append("Requested TTS playback (en-US, independent of translation result)")
+
+        append("On-device STT supported (en-US): \(speechRecognitionService.supportsOnDeviceRecognition(locale: Locale(identifier: "en-US")))")
+        append("On-device STT supported (vi-VN): \(speechRecognitionService.supportsOnDeviceRecognition(locale: Locale(identifier: "vi-VN")))")
+
+        // Both of these show an interactive system permission dialog on
+        // first run. Race them against a timeout so a non-interactive run
+        // (nobody available to tap Allow/Don't Allow) still finishes instead
+        // of hanging forever; a real run on device/simulator will actually
+        // resolve these once a person responds to the prompt.
+        let sttAuthorized = await withTimeout(seconds: 5) { await self.speechRecognitionService.requestAuthorization() }
+        append("Speech recognition authorized: \(sttAuthorized.map(String.init) ?? "pending (needs manual tap)")")
+
+        let micGranted = await withTimeout(seconds: 5) { await self.audioCaptureService.requestMicrophonePermission() }
+        append("Microphone permission granted: \(micGranted.map(String.init) ?? "pending (needs manual tap)")")
+
         append("Pipeline test complete")
+    }
+
+    /// Awaits `operation`, giving up (returning nil) after `seconds` instead
+    /// of hanging — used only for the two calls above, which can otherwise
+    /// block forever on a system permission dialog nothing here can dismiss.
+    private func withTimeout<T: Sendable>(seconds: TimeInterval, operation: @escaping @Sendable () async -> T) async -> T? {
+        await withTaskGroup(of: T?.self) { group in
+            group.addTask { await operation() }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                return nil
+            }
+            let result = await group.next() ?? nil
+            group.cancelAll()
+            return result
+        }
     }
 }

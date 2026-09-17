@@ -30,7 +30,7 @@ Engineering plan derived from `PRD.md` and `DESIGN.md`. Milestone numbers (M1–
 
 ## Phase 0 — Project Scaffold (this session)
 
-- [x] Xcode project generated via XcodeGen, iOS 17.4 deployment target, SwiftUI lifecycle
+- [x] Xcode project generated via XcodeGen, iOS 18.0 deployment target (bumped from 17.4 in Phase 1 — see PRD.md correction), SwiftUI lifecycle
 - [x] Folder structure above created
 - [x] Design tokens from `DESIGN.md` ported into `AppTheme` (Color + typography extensions)
 - [x] Static/mock UI for both screens, visually matching `Assets/*/screen.png`, wired to fake in-memory data
@@ -41,11 +41,19 @@ Engineering plan derived from `PRD.md` and `DESIGN.md`. Milestone numbers (M1–
 
 ## Phase 1 (M1) — Core Pipeline Proof of Concept
 
-- [ ] `SpeechRecognitionService`: request authorization, verify `supportsOnDeviceRecognition`, stream partial/final results
-- [ ] `TranslationService`: check `LanguageAvailability.status`, trigger `downloadLanguageModelIfNeeded`, translate string
-- [ ] `SpeechSynthesisService`: pick best offline `AVSpeechSynthesisVoice` per locale, speak text
-- [ ] `AudioCaptureService`: `AVAudioEngine` tap → buffer → recognizer input
-- [ ] Wire one hardcoded pair (en-US ⇄ vi-VN) end-to-end outside the UI (unit test or debug harness) and confirm the <3s STT→translation latency target from PRD §9
+- [x] `SpeechRecognitionService`: request authorization, verify `supportsOnDeviceRecognition`, stream partial/final results
+- [x] `TranslationService`: check `LanguageAvailability.status`, translate string (via `TranslationSession`, vended through `.translationTask` — see PRD.md's deployment-target correction; there is no `downloadLanguageModelIfNeeded` API, a session handles download prompting itself)
+- [x] `SpeechSynthesisService`: pick best offline `AVSpeechSynthesisVoice` per locale, speak text
+- [x] `AudioCaptureService`: `AVAudioEngine` tap → buffer → recognizer input
+- [x] Wired one hardcoded pair (en-US ⇄ vi-VN) end-to-end outside the UI via `PipelineTestRunner`/`PipelineTestHostView` (launch with `--pipeline-test`)
+
+**Findings from running the harness in iOS Simulator (iPhone 17, iOS 26.5 runtime):**
+
+- **The Simulator cannot validate non-English on-device Translation or STT at all.** A coverage sweep across Vietnamese, Spanish, French, German, and Japanese all came back `unsupported` for translation (`TranslationError.Cause.unsupportedLanguagePairing`) and `false` for `supportsOnDeviceRecognition`, each logging `No Assistant asset for language <locale>`. English (`en-US`) STT reports `true`. This matches a known Simulator limitation — on-device ML model assets for non-English languages generally aren't provisioned in the Simulator runtime — rather than a real gap in Apple's supported-language list. **PRD §10's "validate Vietnamese specifically" risk is still open and now needs a physical device**, not just simulator testing, before the language pair claims in the PRD can be trusted.
+- TTS is confirmed working independent of the above: `SpeechSynthesisService` found and spoke through the `en-US` "Samantha" voice with no crash.
+- Speech recognition and microphone authorization both show a one-time interactive system dialog on first run; `simctl privacy grant` covers microphone but has no equivalent for the Speech Recognition TCC service, so first run needs a manual tap (or real-device testing, where the user taps it once naturally).
+- Live-microphone STT (an actual spoken utterance transcribed on-device) is still unverified — there's no way to feed real speech into the Simulator programmatically. **Needs manual verification on a real device or by speaking into the Simulator's host-mic passthrough.**
+- Latency target (<3s, PRD §9) could not be measured for en↔vi since the pair is unsupported in Simulator; needs re-measurement on-device once a supported pair is confirmed.
 
 ## Phase 2 (M2) — Conversation Screen, Live Data
 
