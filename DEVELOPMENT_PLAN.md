@@ -95,8 +95,8 @@ Of the three components, only **Translation** can actually be downloaded (`Trans
 
 - [x] Language selector dropdowns now scope to fully-downloaded languages only — an unready language can't be selected at all, replacing the originally-planned "redirect to Language Management when a mic is tapped for an unready language." Prevention beats a reactive redirect: the invalid state (mic tapped for a language that isn't ready) can no longer occur in the first place.
 - [x] Each side's dropdown excludes (greys out, doesn't hide) whichever language the *other* side currently has selected, so the same language can never be picked on both sides.
-- [x] ~~Warning banners for languages with partial on-device support~~ — **dropped, and the per-component chips with it.** Once the Download button installs the speech asset *and* the translation pack, "partial support" is just "not downloaded yet", which the Download button already fixes; a banner would be warning about a problem the next tap solves. Rows are now binary — ready / downloading with real progress / tap to download — and the Speech·Translation·Voice chips are gone, since the user can't act on any one leg individually. The breakdown still exists in `LanguagePackStatus`, where it decides `isFullyReady` and therefore which languages the conversation screen offers. `hasGap` survives as the honest fallback for a leg no download can fix (nothing currently offered is in that state).
-- [ ] Confirm correct behavior fully offline (airplane mode test)
+- [x] ~~Warning banners for languages with partial on-device support~~ — **dropped, and the per-component chips with it.** Once the Download button installs the speech asset *and* the translation pack, "partial support" is just "not downloaded yet", which the Download button already fixes; a banner would be warning about a problem the next tap solves. Rows are now binary — ready / downloading / tap to download — and the Speech·Translation·Voice chips are gone, since the user can't act on any one leg individually. The breakdown still exists in `LanguagePackStatus`, where it decides `isFullyReady` and therefore which languages the conversation screen offers. `hasGap` survives as the honest fallback for a leg no download can fix (nothing currently offered is in that state).
+- [x] Confirmed correct behavior fully offline — a full en↔fr conversation turn (speech → translation → spoken reply) runs in airplane mode on device, through the iOS 26 `SpeechAnalyzer` path. This closes the PRD's core offline promise for a language installed entirely in-app.
 
 ### What download progress can and can't be reported
 
@@ -132,6 +132,8 @@ Symptom: Spanish's `supportsOnDeviceRecognition` was `false` for a long stretch,
 - [ ] Empty-state copy ("Choose your two languages, then tap a mic to start talking.")
 - [ ] QA pass across 3–4 language pairs
 - [ ] (P1, stretch) UI display-language String Catalog + switcher on Screen 2
+- [ ] Carried over from Phase 2: the two small conversation-screen nitpicks noted during device testing
+- [ ] Carried over from Phase 3: re-requesting the *same* language immediately after cancelling its download doesn't re-show the system sheet (`prepareTranslation()` suppressing a repeat prompt; no public API to reset it). Lower priority now that the row keeps spinning and self-promotes, so a cancelled download is visibly recoverable by waiting rather than re-tapping.
 
 ---
 
