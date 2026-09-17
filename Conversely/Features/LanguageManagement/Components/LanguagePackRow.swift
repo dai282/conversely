@@ -1,12 +1,16 @@
 import SwiftUI
 
+/// One language in the Languages list. Deliberately binary: ready, working on
+/// it, or tap to download. The underlying Speech/Translation/Voice breakdown
+/// isn't shown — the user can't act on any leg individually, and the Download
+/// button fetches whichever ones are missing.
 struct LanguagePackRow: View {
     let pack: LanguagePackStatus
     let onDownload: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            HStack(alignment: .top) {
+            HStack(alignment: .center) {
                 HStack(spacing: Theme.Spacing.sm) {
                     Text(pack.language.flag)
                         .font(.system(size: 28))
@@ -14,7 +18,7 @@ struct LanguagePackRow: View {
                         Text(pack.language.englishName)
                             .font(Theme.Typography.titleMd)
                             .foregroundStyle(Theme.Colors.textPrimary)
-                        Text("\(pack.language.localizedName) • \(pack.approximateSizeMB) MB")
+                        Text(subtitle)
                             .font(Theme.Typography.bodySm)
                             .foregroundStyle(Theme.Colors.textSecondary)
                     }
@@ -25,15 +29,24 @@ struct LanguagePackRow: View {
                 trailingControl
             }
 
-            HStack(spacing: Theme.Spacing.sm) {
-                componentChip("Speech", pack.speech)
-                componentChip("Translation", pack.translation)
-                componentChip("Voice", pack.voice)
+            if let progress = pack.downloadProgress {
+                ProgressView(value: progress)
+                    .tint(Theme.Colors.primary)
             }
         }
         .padding(Theme.Spacing.md)
         .background(Theme.Colors.surfaceContainer, in: RoundedRectangle(cornerRadius: Theme.Radius.lg))
         .overlay(RoundedRectangle(cornerRadius: Theme.Radius.lg).stroke(Theme.Colors.outlineVariant, lineWidth: 1))
+    }
+
+    private var subtitle: String {
+        if let progress = pack.downloadProgress {
+            return "Downloading… \(Int(progress * 100))%"
+        }
+        if pack.hasGap {
+            return "\(pack.language.localizedName) • not supported on this device"
+        }
+        return "\(pack.language.localizedName) • \(pack.approximateSizeMB) MB"
     }
 
     @ViewBuilder
@@ -46,51 +59,20 @@ struct LanguagePackRow: View {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(Theme.Colors.primary)
         } else if pack.isInProgress {
-            Image(systemName: "xmark")
-                .foregroundStyle(Theme.Colors.textSecondary)
+            ProgressView()
+                .controlSize(.small)
+        } else if pack.hasGap {
+            // No download would fix this one, so don't offer a button that
+            // can't deliver.
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundStyle(Theme.Colors.error)
         } else {
             Button(action: onDownload) {
                 Image(systemName: "arrow.down.circle")
                     .font(.system(size: 20))
                     .foregroundStyle(Theme.Colors.primary)
             }
-        }
-    }
-
-    private func componentChip(_ title: String, _ status: ComponentStatus) -> some View {
-        HStack(spacing: 4) {
-            icon(for: status)
-            Text(chipLabel(title, status))
-        }
-        .font(Theme.Typography.labelSm)
-        .foregroundStyle(Theme.Colors.textSecondary)
-        .padding(.horizontal, Theme.Spacing.sm)
-        .padding(.vertical, 4)
-        .background(Theme.Colors.surfaceContainerHigh, in: Capsule())
-    }
-
-    private func chipLabel(_ title: String, _ status: ComponentStatus) -> String {
-        if case .downloading(let progress) = status {
-            return "\(title) \(Int(progress * 100))%"
-        }
-        return title
-    }
-
-    @ViewBuilder
-    private func icon(for status: ComponentStatus) -> some View {
-        switch status {
-        case .downloaded:
-            Image(systemName: "checkmark").font(.system(size: 9, weight: .bold))
-        case .downloading:
-            Image(systemName: "arrow.trianglehead.2.clockwise").font(.system(size: 9, weight: .bold))
-                .foregroundStyle(Theme.Colors.primary)
-        case .queued:
-            Image(systemName: "clock").font(.system(size: 9, weight: .bold))
-        case .notDownloaded:
-            EmptyView()
-        case .unavailable:
-            Image(systemName: "exclamationmark.triangle").font(.system(size: 9, weight: .bold))
-                .foregroundStyle(Theme.Colors.error)
+            .accessibilityLabel("Download \(pack.language.englishName)")
         }
     }
 }
@@ -102,11 +84,11 @@ struct LanguagePackRow: View {
             onDownload: {}
         )
         LanguagePackRow(
-            pack: LanguagePackStatus(language: .japanese, speech: .downloaded, translation: .downloading(progress: 0.68), voice: .queued, approximateSizeMB: 490),
+            pack: LanguagePackStatus(language: .japanese, speech: .downloading(progress: 0.68), translation: .notDownloaded, voice: .downloaded, approximateSizeMB: 490),
             onDownload: {}
         )
         LanguagePackRow(
-            pack: LanguagePackStatus(language: .spanish, speech: .notDownloaded, translation: .notDownloaded, voice: .notDownloaded, approximateSizeMB: 395),
+            pack: LanguagePackStatus(language: .spanish, speech: .notDownloaded, translation: .notDownloaded, voice: .downloaded, approximateSizeMB: 395),
             onDownload: {}
         )
     }

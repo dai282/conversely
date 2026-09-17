@@ -7,21 +7,23 @@ import UIKit
 /// Drives Screen 2 with real per-component status (Phase 3,
 /// DEVELOPMENT_PLAN.md — replaces the Phase 0 mock booleans).
 ///
-/// **API reality check, not a design choice:** of the three components,
-/// only Translation can actually be *downloaded* by a third-party app
-/// (`TranslationSession.prepareTranslation()`, which shows the system's own
-/// download sheet). On-device Speech recognition models and TTS voices are
-/// system-managed — there is no public API to download or delete either one
-/// from inside an app; the user manages both in iOS Settings. So:
-/// - Speech / Voice: detected only (`.downloaded` or `.unavailable`), never
-///   `.notDownloaded` — there's nothing this app can do to change that
-///   status, so a "download" affordance for them would be fake UI.
-/// - Translation: fully real — `.notDownloaded` is downloadable via
-///   `startDownload`, which triggers the system prompt.
-/// - Delete: removed entirely. None of the three components can be deleted
-///   from a third-party app; a Delete button that didn't actually delete
-///   anything would be worse than not having one. `openSystemSettings()`
-///   is the honest alternative for both gaps and cleanup.
+/// **What this app can and can't install**, which is what shapes the whole
+/// screen:
+/// - **Translation** — downloadable via `TranslationSession.prepareTranslation()`,
+///   which shows the system's own download sheet (and owns its progress UI).
+/// - **Speech** — downloadable on iOS 26 via `SpeechAssetService`/`AssetInventory`,
+///   with real progress this app reports itself. Languages the legacy
+///   recognizer covers but `SpeechTranscriber` doesn't (Vietnamese) depend on
+///   a system-managed asset instead; see `SpeechAssetService`'s doc comment.
+/// - **Voice** — system-managed, detected only. In practice every offered
+///   language already has one.
+/// - **Delete** — not possible from a third-party app for any of the three.
+///   A Delete button that didn't delete anything would be worse than none, so
+///   `openSystemSettings()` is the honest alternative.
+///
+/// The per-component breakdown stays internal: it decides `isFullyReady`, and
+/// therefore which languages the conversation screen offers, but the UI shows
+/// only whether a language works — the user can't act on one leg at a time.
 @MainActor
 final class LanguageManagementViewModel: ObservableObject {
     @Published private(set) var packs: [LanguagePackStatus] = []
