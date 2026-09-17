@@ -6,8 +6,6 @@ import Foundation
 @MainActor
 final class LanguageManagementViewModel: ObservableObject {
     @Published var packs: [LanguagePackStatus]
-    @Published var storageUsedDescription = "1.4 GB of 64 GB used"
-    @Published var storageUsedFraction: Double = 1.4 / 64
 
     init() {
         packs = [
@@ -56,11 +54,12 @@ final class LanguageManagementViewModel: ObservableObject {
         ]
     }
 
-    var readyPacks: [LanguagePackStatus] { packs.filter(\.isFullyReady) }
-    var inProgressPacks: [LanguagePackStatus] { packs.filter(\.isInProgress) }
-    var availablePacks: [LanguagePackStatus] {
-        packs.filter { !$0.isFullyReady && !$0.isInProgress }
-    }
+    /// Fully downloaded languages.
+    var downloadedPacks: [LanguagePackStatus] { packs.filter(\.isFullyReady) }
+    /// Everything else — not yet downloaded or mid-download. An in-progress
+    /// download stays here until it finishes, at which point it moves to
+    /// Downloaded on its own; there's no separate "in progress" section.
+    var availablePacks: [LanguagePackStatus] { packs.filter { !$0.isFullyReady } }
 
     func startDownload(for id: String) {
         guard let index = packs.firstIndex(where: { $0.id == id }) else { return }
