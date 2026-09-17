@@ -11,9 +11,7 @@ struct LanguageManagementView: View {
                     section(title: "DOWNLOADED", count: viewModel.downloadedPacks.count, packs: viewModel.downloadedPacks)
                     section(title: "AVAILABLE", count: nil, packs: viewModel.availablePacks)
 
-                    if viewModel.packs.contains(where: \.hasGap) {
-                        settingsGapBanner
-                    }
+                    manageInSettingsBanner
                 }
                 .padding(Theme.Spacing.md)
             }
@@ -34,19 +32,24 @@ struct LanguageManagementView: View {
         }
     }
 
-    /// Speech and Voice gaps can't be fixed from inside this app (PRD §5.2 —
-    /// see LanguageManagementViewModel's doc comment for why); this is the
-    /// honest alternative to a "download" button that wouldn't do anything.
-    private var settingsGapBanner: some View {
+    /// None of the three components (Speech, Translation, Voice) can be
+    /// downloaded-or-deleted symmetrically from this app — Speech and Voice
+    /// are entirely iOS-managed, and even downloaded Translation packs can
+    /// only be deleted from Settings, not from here (see
+    /// LanguageManagementViewModel's doc comment). This is informational,
+    /// not a warning: there's no app URL scheme to jump straight to
+    /// Settings → Apps → Translate → Languages (only to this app's own
+    /// Settings page), so the copy spells out the rest of the path.
+    private var manageInSettingsBanner: some View {
         Button(action: viewModel.openSystemSettings) {
             HStack(alignment: .top, spacing: Theme.Spacing.sm) {
-                Image(systemName: "exclamationmark.triangle")
-                    .foregroundStyle(Theme.Colors.error)
+                Image(systemName: "info.circle")
+                    .foregroundStyle(Theme.Colors.primary)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Some languages are missing Speech or Voice support")
+                    Text("Manage downloaded languages")
                         .font(Theme.Typography.titleMd)
                         .foregroundStyle(Theme.Colors.textPrimary)
-                    Text("These are managed by iOS, not this app. Tap to open Settings.")
+                    Text("To delete a downloaded language, open Settings → Apps → Translate → Languages.")
                         .font(Theme.Typography.bodySm)
                         .foregroundStyle(Theme.Colors.textSecondary)
                 }
