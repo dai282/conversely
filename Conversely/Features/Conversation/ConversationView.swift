@@ -5,11 +5,25 @@ struct ConversationView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            LanguageSelectorBar(
-                languageA: viewModel.languageA,
-                languageB: viewModel.languageB,
-                onSwap: viewModel.swapLanguages
-            )
+            HStack(spacing: Theme.Spacing.sm) {
+                LanguageSelectorBar(
+                    languageA: viewModel.languageA,
+                    languageB: viewModel.languageB,
+                    onSwap: viewModel.swapLanguages
+                )
+
+                if !viewModel.turns.isEmpty {
+                    Button(action: viewModel.clearConversation) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Theme.Colors.textSecondary)
+                            .frame(width: 44, height: 44)
+                            .background(Theme.Colors.surfaceContainer, in: Circle())
+                            .overlay(Circle().stroke(Theme.Colors.outlineVariant, lineWidth: 1))
+                    }
+                    .accessibilityLabel("Clear conversation")
+                }
+            }
             .padding(.horizontal, Theme.Spacing.md)
             .padding(.top, Theme.Spacing.sm)
 

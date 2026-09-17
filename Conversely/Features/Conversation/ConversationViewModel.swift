@@ -47,6 +47,12 @@ final class ConversationViewModel: ObservableObject {
         }
     }
 
+    /// Manual reset of the visible feed — the same effect a relaunch has
+    /// (turns are session-only per PRD §8.2), just without quitting the app.
+    func clearConversation() {
+        turns = []
+    }
+
     func swapLanguages() {
         swap(&languageA, &languageB)
         translationService.configure(
