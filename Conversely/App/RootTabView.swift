@@ -12,6 +12,7 @@ struct RootTabView: View {
     @StateObject private var translationService: TranslationService
     @StateObject private var conversationViewModel: ConversationViewModel
     @StateObject private var languageManagementViewModel: LanguageManagementViewModel
+    @StateObject private var localization = AppLocalization()
 
     init() {
         let translationService = TranslationService()
@@ -41,6 +42,10 @@ struct RootTabView: View {
                 .tag(1)
         }
         .tint(Theme.Colors.primary)
+        .environmentObject(localization)
+        // What actually swaps the UI language: `Text` resolves String Catalog
+        // keys against this, so publishing it here re-renders every label.
+        .environment(\.locale, localization.language.locale)
         .translationTask(translationService.configurationAToB) { session in
             translationService.attachAToB(session)
         }

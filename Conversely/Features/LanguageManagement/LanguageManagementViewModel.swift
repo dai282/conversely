@@ -27,7 +27,6 @@ import UIKit
 @MainActor
 final class LanguageManagementViewModel: ObservableObject {
     @Published private(set) var packs: [LanguagePackStatus] = []
-    @Published var displayLanguage: DisplayLanguage = .english
     @Published private(set) var pendingDownloadConfiguration: TranslationSession.Configuration?
 
     /// Languages with a download in flight, per leg. Neither leg can report
@@ -263,10 +262,6 @@ final class LanguageManagementViewModel: ObservableObject {
     func openSystemSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
-    }
-
-    func setDisplayLanguage(_ language: DisplayLanguage) {
-        displayLanguage = language
     }
 
     /// Translation framework exposes no public API for a pack's actual

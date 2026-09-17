@@ -3,6 +3,8 @@ import Translation
 
 struct LanguageManagementView: View {
     @ObservedObject var viewModel: LanguageManagementViewModel
+    @EnvironmentObject private var localization: AppLocalization
+    @Environment(\.locale) private var locale
 
     var body: some View {
         NavigationStack {
@@ -67,11 +69,11 @@ struct LanguageManagementView: View {
         Menu {
             ForEach(DisplayLanguage.supported) { language in
                 Button {
-                    viewModel.setDisplayLanguage(language)
+                    localization.language = language
                 } label: {
                     HStack {
-                        Text("\(language.flag) \(language.englishName)")
-                        if language == viewModel.displayLanguage {
+                        Text(verbatim: "\(language.flag) \(language.name(in: locale))")
+                        if language == localization.language {
                             Image(systemName: "checkmark")
                         }
                     }
@@ -81,14 +83,14 @@ struct LanguageManagementView: View {
             // No background or border of our own: the toolbar already draws a
             // container around its items, and adding a circle inside it read
             // as a pill wrapped around a circle.
-            Text(viewModel.displayLanguage.flag)
+            Text(verbatim: localization.language.flag)
                 .font(.system(size: 18))
         }
-        .accessibilityLabel("Change display language")
+        .accessibilityLabel(Text("Change display language"))
     }
 
     @ViewBuilder
-    private func section(title: String, packs: [LanguagePackStatus]) -> some View {
+    private func section(title: LocalizedStringKey, packs: [LanguagePackStatus]) -> some View {
         if !packs.isEmpty {
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 Text(title)

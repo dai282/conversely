@@ -8,6 +8,18 @@ struct Language: Identifiable, Hashable {
     let englishName: String
     let localizedName: String
 
+    /// The language's name in whatever UI language is showing, so switching
+    /// the app to Vietnamese renames "Spanish" to "Tiếng Tây Ban Nha" without
+    /// needing a hand-written name per UI language. Only the language code is
+    /// used — `forIdentifier` would yield "Vietnamese (Vietnam)".
+    func name(in locale: Locale) -> String {
+        guard let code = Locale.Language(identifier: id).languageCode?.identifier,
+              let name = locale.localizedString(forLanguageCode: code) else {
+            return englishName
+        }
+        return name
+    }
+
     static let english = Language(id: "en-US", flag: "🇺🇸", englishName: "English", localizedName: "English")
     static let vietnamese = Language(id: "vi-VN", flag: "🇻🇳", englishName: "Vietnamese", localizedName: "Tiếng Việt")
     static let spanish = Language(id: "es-ES", flag: "🇪🇸", englishName: "Spanish", localizedName: "Español")

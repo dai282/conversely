@@ -38,6 +38,7 @@ private struct MicButton: View {
     let onTap: () -> Void
 
     @State private var isPulsing = false
+    @Environment(\.locale) private var locale
 
     /// Recording and processing are visually distinct on purpose: a pulse
     /// that kept going after the mic stopped listening would suggest the app
@@ -82,7 +83,7 @@ private struct MicButton: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.65), value: isActive)
                 .animation(.spring(response: 0.3, dampingFraction: 0.65), value: isProcessing)
 
-                Text(language.englishName)
+                Text(verbatim: language.name(in: locale))
                     .font(Theme.Typography.titleMd)
                     .foregroundStyle(Theme.Colors.textPrimary)
             }
@@ -96,10 +97,11 @@ private struct MicButton: View {
         .accessibilityLabel(accessibilityLabel)
     }
 
-    private var accessibilityLabel: String {
-        if isProcessing { return "Processing \(language.englishName)" }
-        if isActive { return "Listening in \(language.englishName). Tap to stop." }
-        return "Speak \(language.englishName)"
+    private var accessibilityLabel: Text {
+        let name = language.name(in: locale)
+        if isProcessing { return Text("Processing \(name)") }
+        if isActive { return Text("Listening in \(name). Tap to stop.") }
+        return Text("Speak \(name)")
     }
 }
 

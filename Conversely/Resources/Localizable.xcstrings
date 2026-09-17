@@ -1,0 +1,304 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "%@ • %lld MB": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ • %2$lld MB"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ • %2$lld MB"
+          }
+        }
+      }
+    },
+    "%@ • not supported on this device": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ • not supported on this device"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ • không được hỗ trợ trên thiết bị này"
+          }
+        }
+      }
+    },
+    "AVAILABLE": {
+      "comment": "Section header for languages that haven't been downloaded yet",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AVAILABLE"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CÓ SẴN"
+          }
+        }
+      }
+    },
+    "Change display language": {
+      "comment": "Accessibility label for the toolbar flag menu",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change display language"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi ngôn ngữ hiển thị"
+          }
+        }
+      }
+    },
+    "Choose your two languages, then tap a mic to start talking.": {
+      "comment": "Empty state on the Converse screen",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose your two languages, then tap a mic to start talking."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn hai ngôn ngữ của bạn, rồi chạm vào micrô để bắt đầu nói."
+          }
+        }
+      }
+    },
+    "Clear conversation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear conversation"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá cuộc trò chuyện"
+          }
+        }
+      }
+    },
+    "Converse": {
+      "comment": "Tab bar title for the conversation screen",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Converse"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trò chuyện"
+          }
+        }
+      }
+    },
+    "DOWNLOADED": {
+      "comment": "Section header for languages that are ready to use",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DOWNLOADED"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ĐÃ TẢI"
+          }
+        }
+      }
+    },
+    "Download %@": {
+      "comment": "Accessibility label for a language row's download button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download %@"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải %@"
+          }
+        }
+      }
+    },
+    "Downloading…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải…"
+          }
+        }
+      }
+    },
+    "LISTENING…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LISTENING…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ĐANG NGHE…"
+          }
+        }
+      }
+    },
+    "Languages": {
+      "comment": "Tab bar title and navigation title for the language management screen",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Languages"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ"
+          }
+        }
+      }
+    },
+    "Listening in %@. Tap to stop.": {
+      "comment": "Accessibility label for an actively recording mic button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening in %@. Tap to stop."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang nghe bằng %@. Chạm để dừng."
+          }
+        }
+      }
+    },
+    "Manage downloaded languages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage downloaded languages"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quản lý ngôn ngữ đã tải"
+          }
+        }
+      }
+    },
+    "PROCESSING…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PROCESSING…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ĐANG XỬ LÝ…"
+          }
+        }
+      }
+    },
+    "Processing %@": {
+      "comment": "Accessibility label for a mic button whose turn is being translated",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Processing %@"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang xử lý %@"
+          }
+        }
+      }
+    },
+    "Speak %@": {
+      "comment": "Accessibility label for an idle mic button",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speak %@"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nói %@"
+          }
+        }
+      }
+    },
+    "To delete a downloaded language, open Settings → Apps → Translate → Languages.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To delete a downloaded language, open Settings → Apps → Translate → Languages."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Để xoá một ngôn ngữ đã tải, hãy mở Cài đặt → Ứng dụng → Dịch → Ngôn ngữ."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

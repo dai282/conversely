@@ -8,16 +8,18 @@ struct LanguagePackRow: View {
     let pack: LanguagePackStatus
     let onDownload: () -> Void
 
+    @Environment(\.locale) private var locale
+
     var body: some View {
         HStack(alignment: .center) {
             HStack(spacing: Theme.Spacing.sm) {
                 Text(pack.language.flag)
                     .font(.system(size: 28))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(pack.language.englishName)
+                    Text(verbatim: pack.language.name(in: locale))
                         .font(Theme.Typography.titleMd)
                         .foregroundStyle(Theme.Colors.textPrimary)
-                    Text(subtitle)
+                    subtitle
                         .font(Theme.Typography.bodySm)
                         .foregroundStyle(Theme.Colors.textSecondary)
                 }
@@ -32,16 +34,19 @@ struct LanguagePackRow: View {
         .overlay(RoundedRectangle(cornerRadius: Theme.Radius.lg).stroke(Theme.Colors.outlineVariant, lineWidth: 1))
     }
 
-    private var subtitle: String {
+    /// `Text` rather than `String` so these resolve against the environment's
+    /// locale — a string built outside the view hierarchy would always come
+    /// back in the system language, not the app's chosen one.
+    private var subtitle: Text {
         if pack.isInProgress {
             // No percentage is possible for either downloadable leg, so the
             // spinner carries "something is happening" and this says what.
-            return "Downloading…"
+            return Text("Downloading…")
         }
         if pack.hasGap {
-            return "\(pack.language.localizedName) • not supported on this device"
+            return Text("\(pack.language.localizedName) • not supported on this device")
         }
-        return "\(pack.language.localizedName) • \(pack.approximateSizeMB) MB"
+        return Text("\(pack.language.localizedName) • \(pack.approximateSizeMB) MB")
     }
 
     @ViewBuilder
@@ -68,7 +73,7 @@ struct LanguagePackRow: View {
                     .font(.system(size: 20))
                     .foregroundStyle(Theme.Colors.primary)
             }
-            .accessibilityLabel("Download \(pack.language.englishName)")
+            .accessibilityLabel(Text("Download \(pack.language.name(in: locale))"))
         }
     }
 }

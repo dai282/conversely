@@ -9,12 +9,14 @@ struct ChatBubbleView: View {
     let languageB: Language
     let onReplay: () -> Void
 
+    @Environment(\.locale) private var locale
+
     private var isLanguageA: Bool { turn.speaker == .languageA }
     private var speakerLanguage: Language { isLanguageA ? languageA : languageB }
 
     var body: some View {
         VStack(alignment: isLanguageA ? .leading : .trailing, spacing: Theme.Spacing.xs) {
-            Text("\(speakerLanguage.englishName) • \(timeLabel)")
+            Text(verbatim: "\(speakerLanguage.name(in: locale)) • \(timeLabel)")
                 .font(Theme.Typography.labelMd)
                 .foregroundStyle(Theme.Colors.textSecondary)
 

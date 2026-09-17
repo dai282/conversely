@@ -39,7 +39,7 @@ struct LanguageSelectorBar: View {
                     onSelect(language)
                 } label: {
                     HStack {
-                        Text("\(language.flag) \(language.localizedName)")
+                        Text(verbatim: "\(language.flag) \(language.localizedName)")
                         if language == current {
                             Image(systemName: "checkmark")
                         }
@@ -49,8 +49,8 @@ struct LanguageSelectorBar: View {
             }
         } label: {
             HStack(spacing: Theme.Spacing.xs) {
-                Text(current.flag)
-                Text(current.localizedName)
+                Text(verbatim: current.flag)
+                Text(verbatim: current.localizedName)
                     .font(Theme.Typography.titleMd)
                     .foregroundStyle(Theme.Colors.textPrimary)
                 Image(systemName: "chevron.down")

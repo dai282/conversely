@@ -24,7 +24,7 @@ struct ConversationView: View {
                             .background(Theme.Colors.surfaceContainer, in: Circle())
                             .overlay(Circle().stroke(Theme.Colors.outlineVariant, lineWidth: 1))
                     }
-                    .accessibilityLabel("Clear conversation")
+                    .accessibilityLabel(Text("Clear conversation"))
                 }
             }
             .padding(.horizontal, Theme.Spacing.md)
