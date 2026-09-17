@@ -6,6 +6,7 @@ import Foundation
 @MainActor
 final class LanguageManagementViewModel: ObservableObject {
     @Published var packs: [LanguagePackStatus]
+    @Published var displayLanguage: DisplayLanguage = .english
 
     init() {
         packs = [
@@ -73,5 +74,9 @@ final class LanguageManagementViewModel: ObservableObject {
         packs[index].speech = .notDownloaded
         packs[index].translation = .notDownloaded
         packs[index].voice = .notDownloaded
+    }
+
+    func setDisplayLanguage(_ language: DisplayLanguage) {
+        displayLanguage = language
     }
 }

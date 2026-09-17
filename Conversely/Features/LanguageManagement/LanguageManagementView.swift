@@ -14,7 +14,39 @@ struct LanguageManagementView: View {
             }
             .background(Theme.Colors.background.ignoresSafeArea())
             .navigationTitle("Languages")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    displayLanguageSwitcher
+                }
+            }
         }
+    }
+
+    /// UI display language switcher (PRD §6.1) — independent of the
+    /// conversation languages managed by the rest of this screen.
+    private var displayLanguageSwitcher: some View {
+        Menu {
+            ForEach(DisplayLanguage.supported) { language in
+                Button {
+                    viewModel.setDisplayLanguage(language)
+                } label: {
+                    HStack {
+                        Text("\(language.flag) \(language.englishName)")
+                        if language == viewModel.displayLanguage {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            Text(viewModel.displayLanguage.flag)
+                .font(.system(size: 18))
+                .frame(width: 36, height: 36)
+                .background(Theme.Colors.surfaceContainerHigh, in: Circle())
+                .overlay(Circle().stroke(Theme.Colors.outlineVariant, lineWidth: 1))
+        }
+        .accessibilityLabel("Change display language")
     }
 
     @ViewBuilder
