@@ -100,7 +100,7 @@ This screen is purely functional — no theming, no extras.
 | 4 | Result displayed as one bubble containing original + translated text, aligned to the side that spoke | P0 |
 | 5 | Translated text is automatically spoken aloud via on-device TTS immediately after translation | P0 |
 | 6 | Each bubble has a replay button to re-trigger TTS playback of the translation | P0 |
-| 7 | Language pack management screen lists download status and allows download/delete per language | P0 |
+| 7 | Language pack management screen lists download status and allows download per language[^1] | P0 |
 | 8 | App detects and warns if a selected language lacks on-device STT, translation, or TTS support | P0 |
 | 9 | App functions with no network connection once required packs are downloaded | P0 |
 | 10 | Conversation feed persists only for the current session (cleared on app relaunch) | P1 |
@@ -108,6 +108,8 @@ This screen is purely functional — no theming, no extras.
 | 12 | Visual "recording" and "processing" states on the active mic button | P0 |
 | 13 | App UI (labels, buttons, screen titles) can be displayed in one of 5–10 pre-translated display languages, independent of the conversation languages selected | P1 |
 | 14 | User can manually switch display language via a switcher on Screen 2; default is auto-selected from device locale on first launch | P1 |
+
+[^1]: **Correction (Phase 3, DEVELOPMENT_PLAN.md):** delete was dropped from requirement #7. Only the Translation component has a public download API (`TranslationSession.prepareTranslation()`); on-device STT models and TTS voices are entirely system-managed with no public download *or* delete API for a third-party app. None of the three components can be deleted from this app, so a Delete button was removed rather than shipped as non-functional UI — the Language Management screen instead deep-links to iOS Settings for both fixing gaps and any cleanup the user wants.
 
 ---
 

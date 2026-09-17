@@ -74,9 +74,16 @@ Engineering plan derived from `PRD.md` and `DESIGN.md`. Milestone numbers (M1–
 
 ## Phase 3 (M3) — Language Management Screen, Live Data
 
-- [ ] Real per-language status (STT / Translation / TTS availability checks, not mock booleans)
-- [ ] Download / delete actions with real progress reporting
-- [ ] Compound "usable" status: a language only counts as ready when all three legs are present
+- [x] Real per-language status (STT / Translation / TTS availability checks, not mock booleans)
+- [x] Download action with real progress reporting (Translation only — see finding below)
+- [x] Compound "usable" status: a language only counts as ready when all three legs are present
+
+**API reality check — deviates from PRD §5.2/§6 requirement #7's assumed symmetry, found while implementing:**
+
+Of the three components, only **Translation** can actually be downloaded (`TranslationSession.prepareTranslation()`, shows the system's own download sheet) or has a queryable pairwise status (`LanguageAvailability.status(from:to:)`, checked against English as a fixed pivot since availability is inherently pairwise, not a property of one language). **Speech recognition models and TTS voices are entirely system-managed** — there is no public API to download or delete either from a third-party app; the user manages both in iOS Settings (Dictation languages; Accessibility → Spoken Content → Voices). Consequences:
+- Speech/Voice rows can only ever show `.downloaded` or `.unavailable` — never a downloadable `.notDownloaded` state, since there's nothing this app can trigger.
+- **Removed the Delete button entirely.** None of the three components can be deleted from this app; a button that didn't actually delete anything would be worse than not having one. `openSystemSettings()` (a banner shown when any language `hasGap`) is the honest alternative for both fixing gaps and any cleanup the user wants to do.
+- Storage-size figures shown are still placeholder estimates (PRD §10's "storage footprint" risk remains open) — no public API exposes a pack's real download size before fetching it.
 
 ## Phase 4 (M4) — Error States & Validation
 

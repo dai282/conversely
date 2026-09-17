@@ -3,7 +3,6 @@ import SwiftUI
 struct LanguagePackRow: View {
     let pack: LanguagePackStatus
     let onDownload: () -> Void
-    let onDelete: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
@@ -40,10 +39,12 @@ struct LanguagePackRow: View {
     @ViewBuilder
     private var trailingControl: some View {
         if pack.isFullyReady {
-            Button(action: onDelete) {
-                Image(systemName: "trash")
-                    .foregroundStyle(Theme.Colors.textSecondary)
-            }
+            // Nothing to delete from this app — Translation packs, on-device
+            // STT models, and TTS voices are all system-managed with no
+            // public deletion API. See LanguageManagementViewModel's doc
+            // comment.
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(Theme.Colors.primary)
         } else if pack.isInProgress {
             Image(systemName: "xmark")
                 .foregroundStyle(Theme.Colors.textSecondary)
@@ -98,15 +99,15 @@ struct LanguagePackRow: View {
     VStack(spacing: Theme.Spacing.md) {
         LanguagePackRow(
             pack: LanguagePackStatus(language: .english, speech: .downloaded, translation: .downloaded, voice: .downloaded, approximateSizeMB: 380),
-            onDownload: {}, onDelete: {}
+            onDownload: {}
         )
         LanguagePackRow(
             pack: LanguagePackStatus(language: .japanese, speech: .downloaded, translation: .downloading(progress: 0.68), voice: .queued, approximateSizeMB: 490),
-            onDownload: {}, onDelete: {}
+            onDownload: {}
         )
         LanguagePackRow(
             pack: LanguagePackStatus(language: .spanish, speech: .notDownloaded, translation: .notDownloaded, voice: .notDownloaded, approximateSizeMB: 395),
-            onDownload: {}, onDelete: {}
+            onDownload: {}
         )
     }
     .padding()

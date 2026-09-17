@@ -1,4 +1,5 @@
 import SwiftUI
+import Translation
 
 struct LanguageManagementView: View {
     @ObservedObject var viewModel: LanguageManagementViewModel
@@ -9,6 +10,10 @@ struct LanguageManagementView: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
                     section(title: "DOWNLOADED", count: viewModel.downloadedPacks.count, packs: viewModel.downloadedPacks)
                     section(title: "AVAILABLE", count: nil, packs: viewModel.availablePacks)
+
+                    if viewModel.packs.contains(where: \.hasGap) {
+                        settingsGapBanner
+                    }
                 }
                 .padding(Theme.Spacing.md)
             }
@@ -20,7 +25,37 @@ struct LanguageManagementView: View {
                     displayLanguageSwitcher
                 }
             }
+            .translationTask(viewModel.pendingDownloadConfiguration) { session in
+                await viewModel.handleDownloadSession(session)
+            }
+            .refreshable {
+                await viewModel.refreshAllStatuses()
+            }
         }
+    }
+
+    /// Speech and Voice gaps can't be fixed from inside this app (PRD §5.2 —
+    /// see LanguageManagementViewModel's doc comment for why); this is the
+    /// honest alternative to a "download" button that wouldn't do anything.
+    private var settingsGapBanner: some View {
+        Button(action: viewModel.openSystemSettings) {
+            HStack(alignment: .top, spacing: Theme.Spacing.sm) {
+                Image(systemName: "exclamationmark.triangle")
+                    .foregroundStyle(Theme.Colors.error)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Some languages are missing Speech or Voice support")
+                        .font(Theme.Typography.titleMd)
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                    Text("These are managed by iOS, not this app. Tap to open Settings.")
+                        .font(Theme.Typography.bodySm)
+                        .foregroundStyle(Theme.Colors.textSecondary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(Theme.Spacing.md)
+            .background(Theme.Colors.surfaceContainer, in: RoundedRectangle(cornerRadius: Theme.Radius.lg))
+        }
+        .buttonStyle(.plain)
     }
 
     /// UI display language switcher (PRD §6.1) — independent of the
@@ -68,8 +103,7 @@ struct LanguageManagementView: View {
                 ForEach(packs) { pack in
                     LanguagePackRow(
                         pack: pack,
-                        onDownload: { viewModel.startDownload(for: pack.id) },
-                        onDelete: { viewModel.delete(for: pack.id) }
+                        onDownload: { viewModel.startDownload(for: pack.id) }
                     )
                 }
             }
