@@ -7,7 +7,7 @@ Two screens total: **Converse** (default) and **Languages** (pack management). S
 ## Requirements
 
 - Xcode 16+ (built/tested with Xcode 26.6)
-- iOS 17.4+ deployment target (required by the `Translation` framework)
+- iOS 18.0+ deployment target (required by `TranslationSession`/`.translationTask` — see PRD.md's deployment target correction)
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) — `brew install xcodegen`
 
 ## Getting started

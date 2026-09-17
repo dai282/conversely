@@ -1,9 +1,11 @@
 # Product Requirements Document: Offline Duo-Language Translator (MVP)
 
 **Version:** 1.0 (MVP)
-**Platform:** iOS 17.4+
+**Platform:** iOS 18.0+ (see note below)
 **Author:** Product/Founder
 **Status:** Draft
+
+> **Deployment target correction (Phase 1, DEVELOPMENT_PLAN.md):** this doc originally targeted iOS 17.4+, reflecting the `Translation` framework's earliest availability. In practice, 17.4 only ships the system-sheet `.translationPresentation` UI, which doesn't return translated text to the app. Getting a string back to render in our own bubble UI and feed to our own TTS — which this product requires — needs the session-based `TranslationSession`/`.translationTask` API, which the SDK marks iOS 18.0+. Bumped accordingly; iOS 18 is over two years old as of this writing; the reduction in addressable devices is negligible.
 
 ---
 
@@ -129,7 +131,7 @@ This screen is purely functional — no theming, no extras.
 | Function | Framework | Notes |
 |---|---|---|
 | Speech-to-text | `SFSpeechRecognizer` (on-device mode) | Must check `supportsOnDeviceRecognition` per locale before allowing selection |
-| Translation | `Translation` framework (iOS 17.4+) | Requires `LanguageAvailability` check + `downloadLanguageModelIfNeeded` before first use |
+| Translation | `Translation` framework, `TranslationSession`/`.translationTask` (iOS 18.0+) | `LanguageAvailability.status(from:to:)` to check availability; a session vended via `.translationTask` handles on-device model download prompting |
 | Text-to-speech | `AVSpeechSynthesizer` | Use best available offline voice per locale (`AVSpeechSynthesisVoice`) |
 | Audio capture | `AVAudioEngine` | Feeds buffer to `SFSpeechRecognizer`; also basis for future VAD (P2) |
 | UI | SwiftUI | Single main view + one settings/list view |
@@ -162,7 +164,7 @@ This screen is purely functional — no theming, no extras.
 - **Language coverage gaps:** Not all languages have on-device STT or high-quality offline TTS voices. The initial supported-language list should be curated to pairs with full on-device support (validate Vietnamese specifically, since it's the example case).
 - **Storage footprint:** Each language pack (STT + translation + voice) can be sizable; management screen should show approximate size before download.
 - **Silence/turn-taking edge cases:** Overlapping speech or background noise may degrade STT accuracy — no mitigation planned for MVP beyond manual mic control.
-- **App Store review:** On-device only, first-party frameworks — low risk, but confirm `Translation` framework's minimum OS requirement (17.4+) doesn't excessively cut addressable devices.
+- **App Store review:** On-device only, first-party frameworks — low risk. Minimum OS requirement is iOS 18.0+ (see correction at top of doc), which does not meaningfully cut addressable devices given its age at time of writing.
 
 ---
 
