@@ -9,6 +9,7 @@ final class AudioCaptureService {
     }
 
     private let engine = AVAudioEngine()
+    private var continuation: AsyncStream<AVAudioPCMBuffer>.Continuation?
 
     var isRunning: Bool { engine.isRunning }
 
@@ -29,18 +30,23 @@ final class AudioCaptureService {
     }
 
     /// Starts capturing and returns a stream of PCM buffers at the input
-    /// node's native format. Call `stopCapture()` (or cancel consumption of
-    /// the stream) to tear down the tap and stop the engine.
+    /// node's native format. Call `stopCapture()` to end the stream (letting
+    /// a consumer like `SpeechRecognitionService` see the end and finalize
+    /// its last result) and tear down the tap/engine.
     func startCapture() throws -> AsyncStream<AVAudioPCMBuffer> {
         let inputNode = engine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
 
         let stream = AsyncStream<AVAudioPCMBuffer> { continuation in
+            self.continuation = continuation
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
                 continuation.yield(buffer)
             }
+            // Covers teardown when the *consumer* stops iterating (e.g. its
+            // Task is cancelled) as well as the explicit stopCapture() path
+            // below, which finishes the continuation itself.
             continuation.onTermination = { [weak self] _ in
-                self?.stopCapture()
+                self?.teardownEngine()
             }
         }
 
@@ -53,7 +59,15 @@ final class AudioCaptureService {
         return stream
     }
 
+    /// Producer-side stop: finishes the buffer stream so whoever is
+    /// consuming it (e.g. the recognition request's feed loop) sees the end
+    /// and can call `endAudio()` to get a final transcript.
     func stopCapture() {
+        continuation?.finish()
+        continuation = nil
+    }
+
+    private func teardownEngine() {
         guard engine.isRunning else { return }
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()

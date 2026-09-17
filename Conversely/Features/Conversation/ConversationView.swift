@@ -25,7 +25,7 @@ struct ConversationView: View {
                                 turn: turn,
                                 languageA: viewModel.languageA,
                                 languageB: viewModel.languageB,
-                                onReplay: {}
+                                onReplay: { viewModel.replay(turn) }
                             )
                             .id(turn.id)
                         }
@@ -82,6 +82,6 @@ struct ConversationView: View {
 }
 
 #Preview {
-    ConversationView(viewModel: ConversationViewModel())
+    ConversationView(viewModel: ConversationViewModel(translationService: TranslationService()))
         .preferredColorScheme(.dark)
 }

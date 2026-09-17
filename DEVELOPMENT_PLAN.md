@@ -65,10 +65,12 @@ Engineering plan derived from `PRD.md` and `DESIGN.md`. Milestone numbers (M1–
 
 ## Phase 2 (M2) — Conversation Screen, Live Data
 
-- [ ] Replace mock `ConversationViewModel` state with the Phase 1 services
-- [ ] Mic button state machine: Idle → Listening → Processing → Result (+ auto-TTS) → Idle
-- [ ] Enforce only one side recording at a time
-- [ ] Chat bubble: original + translated text, replay button re-triggers TTS
+- [x] Replace mock `ConversationViewModel` state with the Phase 1 services
+- [x] Mic button state machine: Idle → Listening → Processing → Result (+ auto-TTS) → Idle
+- [x] Enforce only one side recording at a time
+- [x] Chat bubble: original + translated text, replay button re-triggers TTS
+
+**Confirmed working end-to-end on a physical device (iPhone 13 Pro):** live speech → on-device transcription → translation → auto-spoken result, for both directions of a real conversation, with fast (sub-second, per Phase 1's measured 0.20s) translation turnaround. `PipelineTestRunner`/`PipelineTestHostView` from Phase 1 stay in the repo as a standalone diagnostic (reachable only via `--pipeline-test`); the production Conversation screen no longer touches mock data at all. A couple of small polish nitpicks were noted during testing and deliberately deferred to Phase 5.
 
 ## Phase 3 (M3) — Language Management Screen, Live Data
 

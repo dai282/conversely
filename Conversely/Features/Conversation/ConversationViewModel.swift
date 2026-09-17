@@ -1,30 +1,58 @@
 import Foundation
+import AVFoundation
+import Translation
 
-/// Drives Screen 1 with canned/mock data so the UI can be built and reviewed
-/// before the real STT -> Translation -> TTS pipeline lands (see DEVELOPMENT_PLAN.md, Phase 1).
-/// `tapMic` simulates Idle -> Listening -> Processing -> Result -> Idle (PRD §5.1).
+/// Drives Screen 1 with the real STT -> Translation -> TTS pipeline built in
+/// Phase 1 (see DEVELOPMENT_PLAN.md, Phase 2). `tapMic` runs
+/// Idle -> Listening -> Processing -> Result -> Idle against actual on-device
+/// speech recognition and translation (PRD §5.1).
+///
+/// `TranslationService`'s `TranslationSession`s are hosted by `RootTabView`
+/// (a session can only be vended via SwiftUI's `.translationTask`), so this
+/// view model is handed a shared instance rather than owning one itself.
 @MainActor
 final class ConversationViewModel: ObservableObject {
     @Published var languageA: Language
     @Published var languageB: Language
-    @Published var turns: [ConversationTurn]
+    @Published var turns: [ConversationTurn] = []
     @Published var activeSpeaker: Speaker?
     @Published var isProcessing = false
     @Published var liveTranscript: String = ""
 
-    private var listeningTask: Task<Void, Never>?
+    private let translationService: TranslationService
+    private let speechRecognitionService = SpeechRecognitionService()
+    private let audioCaptureService = AudioCaptureService()
+    private let speechSynthesisService = SpeechSynthesisService()
 
-    init(languageA: Language = .english, languageB: Language = .vietnamese) {
+    private var recognitionTask: Task<Void, Never>?
+    private var didRequestPermissions = false
+
+    init(languageA: Language = .english, languageB: Language = .vietnamese, translationService: TranslationService) {
         self.languageA = languageA
         self.languageB = languageB
-        self.turns = Self.seedTurns
-        // Seeded to match the mockup: Language B is already mid-utterance on launch.
-        self.activeSpeaker = .languageB
-        self.liveTranscript = "Khoảng mười phút đi bộ..."
+        self.translationService = translationService
+        translationService.configure(
+            languageA: Self.localeLanguage(for: languageA),
+            languageB: Self.localeLanguage(for: languageB)
+        )
+        requestPermissionsIfNeeded()
+    }
+
+    private func requestPermissionsIfNeeded() {
+        guard !didRequestPermissions else { return }
+        didRequestPermissions = true
+        Task {
+            _ = await speechRecognitionService.requestAuthorization()
+            _ = await audioCaptureService.requestMicrophonePermission()
+        }
     }
 
     func swapLanguages() {
         swap(&languageA, &languageB)
+        translationService.configure(
+            languageA: Self.localeLanguage(for: languageA),
+            languageB: Self.localeLanguage(for: languageB)
+        )
     }
 
     /// Mic tapped for a given side. Ignored for the inactive side while the
@@ -35,111 +63,92 @@ final class ConversationViewModel: ObservableObject {
         }
 
         if activeSpeaker == speaker {
-            finishTurn(for: speaker)
+            audioCaptureService.stopCapture()
         } else {
             startListening(for: speaker)
         }
     }
 
+    /// Replays a bubble's translation — always in the *listener's* language,
+    /// i.e. the language the other side speaks.
+    func replay(_ turn: ConversationTurn) {
+        let listenerLanguage = turn.speaker == .languageA ? languageB : languageA
+        speechSynthesisService.speak(turn.translatedText, locale: Self.locale(for: listenerLanguage))
+    }
+
     private func startListening(for speaker: Speaker) {
-        listeningTask?.cancel()
+        recognitionTask?.cancel()
         activeSpeaker = speaker
         liveTranscript = ""
         isProcessing = false
 
-        let script = MockScript.next(for: speaker)
-        listeningTask = Task { [weak self] in
-            for character in script.original {
-                guard let self, !Task.isCancelled else { return }
-                self.liveTranscript.append(character)
-                try? await Task.sleep(nanoseconds: 30_000_000)
+        let sourceLanguage = speaker == .languageA ? languageA : languageB
+
+        recognitionTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                try self.audioCaptureService.activateAudioSession()
+                let bufferStream = try self.audioCaptureService.startCapture()
+                let recognitionStream = self.speechRecognitionService.recognize(
+                    bufferStream: bufferStream,
+                    locale: Self.locale(for: sourceLanguage)
+                )
+
+                var finalTranscript = ""
+                for try await transcript in recognitionStream {
+                    finalTranscript = transcript
+                    self.liveTranscript = transcript
+                }
+
+                await self.finishTurn(for: speaker, transcript: finalTranscript)
+            } catch {
+                print("Recognition failed: \(error)")
+                self.activeSpeaker = nil
+                self.liveTranscript = ""
+                self.isProcessing = false
             }
-            guard let self, !Task.isCancelled else { return }
-            self.completeTurn(for: speaker, script: script)
         }
     }
 
-    private func finishTurn(for speaker: Speaker) {
-        listeningTask?.cancel()
-        let script = MockScript.current(for: speaker, partial: liveTranscript)
-        completeTurn(for: speaker, script: script)
-    }
+    private func finishTurn(for speaker: Speaker, transcript: String) async {
+        guard !transcript.isEmpty else {
+            activeSpeaker = nil
+            liveTranscript = ""
+            return
+        }
 
-    private func completeTurn(for speaker: Speaker, script: MockScript.Line) {
         isProcessing = true
-        Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 700_000_000)
-            guard let self else { return }
-            self.turns.append(
+
+        do {
+            let translated = speaker == .languageA
+                ? try await translationService.translateAToB(transcript)
+                : try await translationService.translateBToA(transcript)
+
+            turns.append(
                 ConversationTurn(
                     speaker: speaker,
                     timestamp: Date(),
-                    originalText: script.original,
-                    translatedText: script.translated
+                    originalText: transcript,
+                    translatedText: translated
                 )
             )
-            self.isProcessing = false
-            self.activeSpeaker = nil
-            self.liveTranscript = ""
+
+            let listenerLanguage = speaker == .languageA ? languageB : languageA
+            speechSynthesisService.speak(translated, locale: Self.locale(for: listenerLanguage))
+        } catch {
+            print("Translation failed: \(error)")
         }
+
+        isProcessing = false
+        activeSpeaker = nil
+        liveTranscript = ""
     }
 
-    /// Seed data mirroring Assets/duotranslate_conversation/screen.png exactly.
-    private static let seedTurns: [ConversationTurn] = {
-        let calendar = Calendar.current
-        let base = calendar.date(bySettingHour: 10, minute: 42, second: 0, of: Date()) ?? Date()
-        return [
-            ConversationTurn(
-                speaker: .languageA,
-                timestamp: base,
-                originalText: "Where is the nearest train station?",
-                translatedText: "Ga xe lửa gần nhất ở đâu?"
-            ),
-            ConversationTurn(
-                speaker: .languageB,
-                timestamp: base,
-                originalText: "Đi thẳng hai ngã tư nữa rồi rẽ phải.",
-                translatedText: "Go straight for two more intersections, then turn right."
-            ),
-            ConversationTurn(
-                speaker: .languageA,
-                timestamp: Date(),
-                originalText: "Thank you so much! Can I walk there?",
-                translatedText: "Cảm ơn bạn rất nhiều! Tôi có thể đi bộ đến đó được không?"
-            ),
-        ]
-    }()
-}
-
-/// Canned lines used only for the Phase 0 mock demo.
-private enum MockScript {
-    struct Line {
-        let original: String
-        let translated: String
+    private static func locale(for language: Language) -> Locale {
+        Locale(identifier: language.id)
     }
 
-    static func next(for speaker: Speaker) -> Line {
-        switch speaker {
-        case .languageA:
-            return Line(
-                original: "How much does it cost?",
-                translated: "Cái này giá bao nhiêu?"
-            )
-        case .languageB:
-            return Line(
-                original: "Khoảng mười phút đi bộ. Rất gần thôi.",
-                translated: "It's about a ten minute walk. Very close."
-            )
-        }
-    }
-
-    static func current(for speaker: Speaker, partial: String) -> Line {
-        guard !partial.isEmpty else { return next(for: speaker) }
-        switch speaker {
-        case .languageA:
-            return Line(original: partial, translated: "Cái này giá bao nhiêu?")
-        case .languageB:
-            return Line(original: partial, translated: "It's about a ten minute walk. Very close.")
-        }
+    private static func localeLanguage(for language: Language) -> Locale.Language {
+        Locale.Language(identifier: language.id)
     }
 }
