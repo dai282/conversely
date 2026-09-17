@@ -4,7 +4,6 @@ import Translation
 struct LanguageManagementView: View {
     @ObservedObject var viewModel: LanguageManagementViewModel
     @EnvironmentObject private var localization: AppLocalization
-    @Environment(\.locale) private var locale
 
     var body: some View {
         NavigationStack {
@@ -72,7 +71,7 @@ struct LanguageManagementView: View {
                     localization.language = language
                 } label: {
                     HStack {
-                        Text(verbatim: "\(language.flag) \(language.name(in: locale))")
+                        Text(verbatim: "\(language.flag) \(language.nativeName)")
                         if language == localization.language {
                             Image(systemName: "checkmark")
                         }

@@ -21,11 +21,11 @@ struct DisplayLanguage: Identifiable, Hashable {
 
     var locale: Locale { Locale(identifier: id) }
 
-    /// The language's name in whichever UI language is showing, so the menu
-    /// reads "Tiếng Anh / Tiếng Việt" in Vietnamese rather than staying
-    /// English. Falls back to the hardcoded name if the system has no
-    /// translation for the pair.
-    func name(in locale: Locale) -> String {
+    /// Each language named in itself — "English", "Tiếng Việt" — never
+    /// translated into whichever UI language happens to be showing. Someone
+    /// switching away from a language they can't read needs to recognise
+    /// their own language in the list, which "Tiếng Anh" wouldn't help with.
+    var nativeName: String {
         locale.localizedString(forLanguageCode: id) ?? englishName
     }
 }

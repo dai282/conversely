@@ -128,12 +128,22 @@ Symptom: Spanish's `supportsOnDeviceRecognition` was `false` for a long stretch,
 
 ## Phase 5 (M5) — Polish & QA
 
-- [ ] Recording/processing animations on the active mic button
-- [ ] Empty-state copy ("Choose your two languages, then tap a mic to start talking.")
-- [ ] QA pass across 3–4 language pairs
-- [ ] (P1, stretch) UI display-language String Catalog + switcher on Screen 2
-- [ ] Carried over from Phase 2: the two small conversation-screen nitpicks noted during device testing
-- [ ] Carried over from Phase 3: re-requesting the *same* language immediately after cancelling its download doesn't re-show the system sheet (`prepareTranslation()` suppressing a repeat prompt; no public API to reset it). Lower priority now that the row keeps spinning and self-promotes, so a cancelled download is visibly recoverable by waiting rather than re-tapping.
+- [x] Recording/processing animations on the active mic button — a pulsing ring while capturing, a spinner in place of the mic glyph while translating. Deliberately distinct: a pulse continuing after recording stopped would imply the app was still listening.
+- [x] Empty-state copy ("Choose your two languages, then tap a mic to start talking.")
+- [x] QA pass across language pairs — signed off on device
+- [x] UI display-language String Catalog + switcher on Screen 2 (English and Vietnamese), promoted from stretch goal and delivered
+- [x] Carried over from Phase 2: both conversation-screen nitpicks — dropped the "N languages" count beside the Downloaded header, and removed the display-language button's own circular background (the toolbar already draws a container, so ours read as a pill wrapped around a circle)
+- ~~Carried over from Phase 3: the same-language repeat-download-sheet suppression~~ — **dropped by decision.** It needs an API to reset `prepareTranslation()`'s prompt state that doesn't exist publicly, and the row now spins and self-promotes, so a cancelled download recovers by waiting rather than re-tapping.
+
+### Localization approach
+
+The display-language switch applies immediately rather than on next launch. `AppLocalization` owns and persists the choice, and `RootTabView` publishes it through SwiftUI's `\.locale` environment value — which is what `Text` resolves String Catalog keys against. The widely-cited alternative, rewriting `AppleLanguages` in `UserDefaults`, only takes effect after a restart.
+
+The consequence to remember when adding UI: **strings must be built where the environment is readable.** `Text("Speak \(name)")` localizes; a `String` assembled in a view model does not. That's why `LanguagePackRow.subtitle` and the mic accessibility labels return `Text` rather than `String`.
+
+Language names are not hand-written per UI language — `Locale.localizedString(forLanguageCode:)` supplies them, so Spanish reads "Tiếng Tây Ban Nha" in Vietnamese for free, and any future UI language inherits the same. The one exception is the display-language menu itself, which names each language in *itself* ("English", "Tiếng Việt"): someone switching away from a language they can't read needs to recognise their own in the list.
+
+`DisplayLanguage.supported` lists only what the catalog actually covers. Offering more would silently relabel English under a different flag.
 
 ---
 
