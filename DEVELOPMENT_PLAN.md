@@ -49,11 +49,19 @@ Engineering plan derived from `PRD.md` and `DESIGN.md`. Milestone numbers (M1–
 
 **Findings from running the harness in iOS Simulator (iPhone 17, iOS 26.5 runtime):**
 
-- **The Simulator cannot validate non-English on-device Translation or STT at all.** A coverage sweep across Vietnamese, Spanish, French, German, and Japanese all came back `unsupported` for translation (`TranslationError.Cause.unsupportedLanguagePairing`) and `false` for `supportsOnDeviceRecognition`, each logging `No Assistant asset for language <locale>`. English (`en-US`) STT reports `true`. This matches a known Simulator limitation — on-device ML model assets for non-English languages generally aren't provisioned in the Simulator runtime — rather than a real gap in Apple's supported-language list. **PRD §10's "validate Vietnamese specifically" risk is still open and now needs a physical device**, not just simulator testing, before the language pair claims in the PRD can be trusted.
+- **The Simulator cannot validate non-English on-device Translation or STT at all.** A coverage sweep across Vietnamese, Spanish, French, German, and Japanese all came back `unsupported` for translation (`TranslationError.Cause.unsupportedLanguagePairing`) and `false` for `supportsOnDeviceRecognition`, each logging `No Assistant asset for language <locale>`. English (`en-US`) STT reports `true`. Confirmed below to be a Simulator-only limitation, not a real gap.
 - TTS is confirmed working independent of the above: `SpeechSynthesisService` found and spoke through the `en-US` "Samantha" voice with no crash.
 - Speech recognition and microphone authorization both show a one-time interactive system dialog on first run; `simctl privacy grant` covers microphone but has no equivalent for the Speech Recognition TCC service, so first run needs a manual tap (or real-device testing, where the user taps it once naturally).
-- Live-microphone STT (an actual spoken utterance transcribed on-device) is still unverified — there's no way to feed real speech into the Simulator programmatically. **Needs manual verification on a real device or by speaking into the Simulator's host-mic passthrough.**
-- Latency target (<3s, PRD §9) could not be measured for en↔vi since the pair is unsupported in Simulator; needs re-measurement on-device once a supported pair is confirmed.
+
+**Findings from running the harness on a physical device (iPhone 13 Pro, iOS 26.6.2) — supersedes the Simulator caveats above:**
+
+- Project wired for on-device deployment: `CODE_SIGN_STYLE: Automatic` + `DEVELOPMENT_TEAM` in `project.yml`, built/installed/launched via `xcodebuild -allowProvisioningUpdates` + `xcrun devicectl device install app` / `process launch`.
+- **PRD §10's "validate Vietnamese specifically" risk is now resolved: confirmed working.** On-device, translation en→vi and vi→en both report `supported` (not `unsupported` as in Simulator), and `supportsOnDeviceRecognition` for `vi-VN` is `true`. The Simulator results were a platform limitation, not a real coverage gap.
+- Spanish, French, German, and Japanese all report `supported` for translation on-device too, but `supportsOnDeviceRecognition` is `false` for all four (only English and Vietnamese are `true`) — this looks tied to which languages are enabled for on-device dictation/Siri on this particular device, not a hard framework limitation. **Phase 3's Language Management screen needs to surface this per-component gap clearly** (translation ready but STT not, per PRD §5.2's compound-status requirement) rather than assume "supported" for one component implies all three.
+- First real translate call triggered the system's own "Translate — Required Downloads" sheet (English + Vietnamese model packs); that download took ~7 minutes, which is why the raw round-trip timer for that call reads 425.66s — that's download time, not translation latency.
+- **Real translation latency, measured post-download: 0.20s (vi→en)** — comfortably inside the <3s target in PRD §9.
+- TTS and both permission requests (speech recognition, microphone) resolved cleanly with a real one-time user tap.
+- Still open: an actual spoken utterance through the live mic → on-device STT hasn't been exercised yet (the harness only covers Translation/TTS/support-checks); that's naturally covered once Phase 2 wires the real mic button flow into Screen 1.
 
 ## Phase 2 (M2) — Conversation Screen, Live Data
 
