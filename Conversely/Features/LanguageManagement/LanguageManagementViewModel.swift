@@ -28,12 +28,19 @@ final class LanguageManagementViewModel: ObservableObject {
     @Published var displayLanguage: DisplayLanguage = .english
     @Published private(set) var pendingDownloadConfiguration: TranslationSession.Configuration?
 
+    /// Live fractional progress for speech-asset installs, keyed by language
+    /// id. Unlike the Translation download (whose progress the system's own
+    /// sheet owns), this one is ours to report.
+    @Published private(set) var speechDownloadProgress: [String: Double] = [:]
+
     /// Every conversation pair in this MVP includes English by default, and
     /// Translation framework availability is inherently pairwise rather than
     /// a property of a single language — this is the fixed pivot each
     /// candidate language's status is checked against.
     private let pivotLanguageID = "en-US"
-    private let candidateLanguages: [Language] = [.english, .vietnamese, .spanish, .french, .german, .japanese]
+    private let candidateLanguages: [Language] = [
+        .english, .vietnamese, .spanish, .french, .german, .japanese, .russian, .chinese,
+    ]
 
     init() {
         Task {
@@ -62,10 +69,7 @@ final class LanguageManagementViewModel: ObservableObject {
 
     private func status(for language: Language) async -> LanguagePackStatus {
         let locale = Locale(identifier: language.id)
-
-        let speech: ComponentStatus = (SFSpeechRecognizer(locale: locale)?.supportsOnDeviceRecognition ?? false)
-            ? .downloaded
-            : .unavailable
+        let speech = await speechStatus(for: locale, languageID: language.id)
 
         let languageCode = locale.language.languageCode?.identifier ?? language.id
         let voice: ComponentStatus = AVSpeechSynthesisVoice.speechVoices().contains { $0.language.hasPrefix(languageCode) }
@@ -95,10 +99,37 @@ final class LanguageManagementViewModel: ObservableObject {
         )
     }
 
-    /// Hosts a one-off `TranslationSession` (via `LanguageManagementView`'s
-    /// `.translationTask`) and calls `prepareTranslation()` on it, which
-    /// shows the system's own download sheet for this language pair.
+    /// Union of the two speech engines, because they cover different
+    /// languages and have separate asset families (see
+    /// `SpeechAssetService`). Order matters: the legacy Assistant asset
+    /// being present is enough on its own (that's how Vietnamese works,
+    /// which `SpeechTranscriber` doesn't support at all), and only if it
+    /// isn't do we consult the iOS 26 inventory — which, unlike the legacy
+    /// one, can report a `.notDownloaded` state this app can actually act on.
+    private func speechStatus(for locale: Locale, languageID: String) async -> ComponentStatus {
+        if let progress = speechDownloadProgress[languageID] {
+            return .downloading(progress: progress)
+        }
+        if SFSpeechRecognizer(locale: locale)?.supportsOnDeviceRecognition == true {
+            return .downloaded
+        }
+        guard #available(iOS 26.0, *) else { return .unavailable }
+        switch await SpeechAssetService().status(for: locale) {
+        case .installed: return .downloaded
+        case .downloading: return .downloading(progress: 0)
+        case .notInstalled: return .notDownloaded
+        case .unsupported: return .unavailable
+        }
+    }
+
+    /// Downloads everything a language needs: the Translation pack (via a
+    /// one-off `TranslationSession` hosted by `LanguageManagementView`'s
+    /// `.translationTask`, which shows the system's own sheet) *and* the
+    /// on-device speech asset (via `AssetInventory`, which is ours to drive
+    /// and report progress for).
     func startDownload(for id: String) {
+        startSpeechAssetDownload(for: id)
+
         guard id != pivotLanguageID else { return }
         let configuration = TranslationSession.Configuration(
             source: .init(identifier: pivotLanguageID),
@@ -117,6 +148,33 @@ final class LanguageManagementViewModel: ObservableObject {
         pendingDownloadConfiguration = nil
         Task { @MainActor in
             self.pendingDownloadConfiguration = configuration
+        }
+    }
+
+    private func startSpeechAssetDownload(for id: String) {
+        guard #available(iOS 26.0, *) else { return }
+        guard speechDownloadProgress[id] == nil else { return }
+
+        let locale = Locale(identifier: id)
+        let service = SpeechAssetService()
+
+        Task {
+            guard await service.status(for: locale) == .notInstalled else { return }
+            speechDownloadProgress[id] = 0
+
+            do {
+                try await service.install(locale: locale) { fraction in
+                    Task { @MainActor in
+                        self.speechDownloadProgress[id] = fraction
+                    }
+                }
+                await service.reserveIfPossible(locale: locale)
+            } catch {
+                print("Speech asset install failed for \(id): \(error)")
+            }
+
+            speechDownloadProgress[id] = nil
+            await refreshAllStatuses()
         }
     }
 
@@ -145,6 +203,7 @@ final class LanguageManagementViewModel: ObservableObject {
     /// download size (PRD §10's "storage footprint" risk is still open) —
     /// these are rough placeholder estimates, not measured values.
     private static let approximateSizeMB: [String: Int] = [
-        "en-US": 380, "vi-VN": 410, "es-ES": 395, "fr-FR": 420, "de-DE": 405, "ja-JP": 490,
+        "en-US": 380, "vi-VN": 410, "es-ES": 395, "fr-FR": 420,
+        "de-DE": 405, "ja-JP": 490, "ru-RU": 435, "zh-Hans-CN": 460,
     ]
 }

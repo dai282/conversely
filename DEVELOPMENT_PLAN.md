@@ -97,6 +97,18 @@ Of the three components, only **Translation** can actually be downloaded (`Trans
 - [ ] Warning banners for languages with partial on-device support
 - [ ] Confirm correct behavior fully offline (airplane mode test)
 
+### The on-device STT availability problem, diagnosed
+
+Symptom: Spanish's `supportsOnDeviceRecognition` was `false` for a long stretch, then spontaneously became `true`; French/German/Japanese stayed `false` no matter which Settings toggles were tried (keyboard, dictation languages, Siri language). Diagnosed on-device rather than guessed:
+
+- **There are two independent speech asset families, and the app was only looking at the one it can't control.**
+  - `SFSpeechRecognizer.supportsOnDeviceRecognition` is a read of the legacy **Assistant** (Siri/dictation) asset — the console prints `No Assistant asset for language xx-XX` when it's missing. No public API installs it; only the system does, in the background, after a Settings change. That's the whole explanation for Spanish: adding its keyboard queued the asset, and it landed silently some time later.
+  - iOS 26's **`SpeechTranscriber` + `AssetInventory`** use a *separate* asset family which **is** installable on demand, with real progress (`AssetInstallationRequest.downloadAndInstall()`, `.progress`).
+  - Proven distinct: after `downloadAndInstall()` put `fr_FR` into `SpeechTranscriber.installedLocales`, `supportsOnDeviceRecognition("fr-FR")` was *still* `false` and the `No Assistant asset` line still printed.
+- **Coverage differs between the two engines**, so neither alone suffices. `SpeechTranscriber` supports 30 locales (de, en, es, fr, it, ja, ko, pt, yue, zh families) and notably **not Vietnamese** — the PRD's flagship language, which works only via the legacy recognizer. `SFSpeechRecognizer` covers more languages but offers no install path.
+- **Resolution:** `SpeechRecognitionService` is now hybrid — `SpeechTranscriber`/`SpeechAnalyzer` when it supports the locale and the asset is installed, legacy `SFSpeechRecognizer` otherwise. `SpeechAssetService` wraps `AssetInventory`, and the Language Management Download button now installs the speech asset *and* the Translation pack, so adding a language is entirely in-app. Installed locales are `reserve`d (cap: `maximumReservedLocales`, 5) so the system doesn't reclaim them.
+- **Russian has no on-device STT on either engine** (`legacySTT=false`, `SpeechTranscriber` unsupported) while Translation supports it — so it can be a translation target but never a speaking side, and will always show a Speech gap.
+
 ## Phase 5 (M5) — Polish & QA
 
 - [ ] Recording/processing animations on the active mic button

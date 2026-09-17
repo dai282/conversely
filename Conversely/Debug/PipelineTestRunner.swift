@@ -1,5 +1,6 @@
 import Foundation
 import Translation
+import Speech
 
 /// Drives the real STT/Translation/TTS services end-to-end for one hardcoded
 /// pair (en-US <-> vi-VN), outside the production UI (DEVELOPMENT_PLAN.md,
@@ -53,7 +54,7 @@ final class PipelineTestRunner: ObservableObject {
             let locale = Locale.Language(identifier: candidate.locale)
             let toStatus = await translationService.checkAvailability(from: languageA, to: locale)
             let fromStatus = await translationService.checkAvailability(from: locale, to: languageA)
-            let sttSupported = speechRecognitionService.supportsOnDeviceRecognition(locale: Locale(identifier: candidate.locale))
+            let sttSupported = await speechRecognitionService.supportsOnDeviceRecognition(locale: Locale(identifier: candidate.locale))
             append("\(candidate.name): translation en->\(candidate.locale)=\(toStatus), \(candidate.locale)->en=\(fromStatus); on-device STT=\(sttSupported)")
         }
         append("--- End coverage sweep ---")
@@ -91,8 +92,21 @@ final class PipelineTestRunner: ObservableObject {
         speechSynthesisService.speak("Testing text to speech.", locale: Locale(identifier: "en-US"))
         append("Requested TTS playback (en-US, independent of translation result)")
 
-        append("On-device STT supported (en-US): \(speechRecognitionService.supportsOnDeviceRecognition(locale: Locale(identifier: "en-US")))")
-        append("On-device STT supported (vi-VN): \(speechRecognitionService.supportsOnDeviceRecognition(locale: Locale(identifier: "vi-VN")))")
+        append("On-device STT supported (en-US): \(await speechRecognitionService.supportsOnDeviceRecognition(locale: Locale(identifier: "en-US")))")
+        append("On-device STT supported (vi-VN): \(await speechRecognitionService.supportsOnDeviceRecognition(locale: Locale(identifier: "vi-VN")))")
+
+        // Diagnostic: our Language model hardcodes one regional variant per
+        // language (es-ES for Spanish). If the device's actual dictation
+        // locale is a different Spanish variant (es-MX, es-US, generic
+        // "es", etc.), supportsOnDeviceRecognition(locale: "es-ES") could
+        // read false even with Spanish dictation genuinely enabled.
+        let allSupportedLocales = SFSpeechRecognizer.supportedLocales()
+        let spanishVariants = allSupportedLocales.filter { $0.identifier.hasPrefix("es") }
+        append("All SFSpeechRecognizer.supportedLocales() matching 'es': \(spanishVariants.map(\.identifier).sorted())")
+        for locale in spanishVariants.sorted(by: { $0.identifier < $1.identifier }) {
+            let supported = SFSpeechRecognizer(locale: locale)?.supportsOnDeviceRecognition ?? false
+            append("  \(locale.identifier): on-device=\(supported)")
+        }
 
         // Both of these show an interactive system permission dialog on
         // first run. Race them against a timeout so a non-interactive run
