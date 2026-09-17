@@ -41,9 +41,13 @@ struct ConversationView: View {
                     .padding(Theme.Spacing.md)
                 }
                 .onChange(of: viewModel.turns.count) {
-                    withAnimation {
-                        proxy.scrollTo(viewModel.turns.last?.id, anchor: .bottom)
-                    }
+                    scrollToBottom(proxy)
+                }
+                .onChange(of: viewModel.activeSpeaker) {
+                    scrollToBottom(proxy)
+                }
+                .onAppear {
+                    scrollToBottom(proxy)
                 }
             }
 
@@ -56,6 +60,16 @@ struct ConversationView: View {
             .padding(Theme.Spacing.md)
         }
         .background(Theme.Colors.background.ignoresSafeArea())
+    }
+
+    private func scrollToBottom(_ proxy: ScrollViewProxy) {
+        withAnimation {
+            if viewModel.activeSpeaker != nil {
+                proxy.scrollTo("listening", anchor: .bottom)
+            } else {
+                proxy.scrollTo(viewModel.turns.last?.id, anchor: .bottom)
+            }
+        }
     }
 
     private var emptyState: some View {

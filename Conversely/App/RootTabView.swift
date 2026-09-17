@@ -8,11 +8,13 @@ struct RootTabView: View {
                 .tabItem {
                     Label("Converse", systemImage: "character.bubble")
                 }
+                .tag(0)
 
             LanguageManagementView(viewModel: LanguageManagementViewModel())
                 .tabItem {
                     Label("Languages", systemImage: "arrow.down.circle")
                 }
+                .tag(1)
         }
         .tint(Theme.Colors.primary)
         .onAppear {
