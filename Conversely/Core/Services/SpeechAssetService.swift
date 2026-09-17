@@ -51,9 +51,18 @@ struct SpeechAssetService {
         }
     }
 
-    /// Downloads and installs the speech asset for a locale, reporting
-    /// fractional progress as it goes. Returns immediately if the asset is
-    /// already present.
+    /// Downloads and installs the speech asset for a locale. Returns
+    /// immediately if the asset is already present.
+    ///
+    /// **Two things measured on device that the API shape doesn't admit to:**
+    /// - `request.progress` reports a single coarse unit — `completedUnitCount
+    ///   0 of 1`, `isIndeterminate == false` — for the whole download, so
+    ///   `onProgress` stays at 0 until it jumps to 1 at the end. Callers must
+    ///   treat 0 as "no progress information", not "0% done".
+    /// - The download **can't be cancelled.** `Progress.cancel()` plus Swift
+    ///   task cancellation at 25s left `progress.isCancelled == true` while
+    ///   `downloadAndInstall()` ran on and completed at 132.8s. Nothing here
+    ///   pretends otherwise.
     func install(locale: Locale, onProgress: @escaping @Sendable (Double) -> Void) async throws {
         guard let canonical = await canonicalLocale(for: locale) else { return }
         let module = SpeechTranscriber(locale: canonical, preset: .progressiveTranscription)
@@ -62,11 +71,10 @@ struct SpeechAssetService {
             return
         }
 
-        let progress = request.progress
         let reporter = Task {
             while !Task.isCancelled {
-                onProgress(progress.fractionCompleted)
-                try? await Task.sleep(nanoseconds: 500_000_000)
+                onProgress(request.progress.fractionCompleted)
+                try? await Task.sleep(nanoseconds: 300_000_000)
             }
         }
         defer { reporter.cancel() }

@@ -6,11 +6,17 @@ import Foundation
 /// These are deliberately *not* surfaced individually in the UI. Which of the
 /// three legs is missing is an implementation detail the user can't act on
 /// differently — the Download button fetches whatever is missing — so the
-/// Languages screen shows only whether a language works or not.
+/// Languages screen shows only whether a language works, is working on it, or
+/// hasn't been fetched.
+///
+/// There's no `progress` here because neither downloadable leg reports one:
+/// `AssetInstallationRequest.progress` sits at `0 of 1` for the whole install,
+/// and the Translation framework exposes no progress API at all. See
+/// DEVELOPMENT_PLAN.md, "What download progress can and can't be reported".
 enum ComponentStatus: Hashable {
     case unavailable       // no on-device support exists for this locale at all
     case notDownloaded
-    case downloading(progress: Double)
+    case downloading
     case downloaded
 }
 
@@ -27,16 +33,8 @@ struct LanguagePackStatus: Identifiable, Hashable {
         speech == .downloaded && translation == .downloaded && voice == .downloaded
     }
 
-    var isInProgress: Bool { downloadProgress != nil }
-
-    /// Fractional progress while something is downloading. Only the speech
-    /// asset reports real progress — the Translation pack's download is
-    /// driven by the system's own sheet, which owns its own progress UI.
-    var downloadProgress: Double? {
-        for status in [speech, translation, voice] {
-            if case .downloading(let progress) = status { return progress }
-        }
-        return nil
+    var isInProgress: Bool {
+        [speech, translation, voice].contains(.downloading)
     }
 
     /// A leg with no on-device support at all, which no download can fix.

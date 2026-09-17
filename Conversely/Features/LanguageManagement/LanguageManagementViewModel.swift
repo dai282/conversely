@@ -30,10 +30,14 @@ final class LanguageManagementViewModel: ObservableObject {
     @Published var displayLanguage: DisplayLanguage = .english
     @Published private(set) var pendingDownloadConfiguration: TranslationSession.Configuration?
 
-    /// Live fractional progress for speech-asset installs, keyed by language
-    /// id. Unlike the Translation download (whose progress the system's own
-    /// sheet owns), this one is ours to report.
-    @Published private(set) var speechDownloadProgress: [String: Double] = [:]
+    /// Languages with a download in flight, per leg. Neither leg can report
+    /// how far along it is (see DEVELOPMENT_PLAN.md, "What download progress
+    /// can and can't be reported"), so all the UI needs is the fact that
+    /// something is happening — a spinner until all three legs are ready.
+    @Published private(set) var speechDownloadsInFlight: Set<String> = []
+    @Published private(set) var translationDownloadsInFlight: Set<String> = []
+
+    private var translationPollTask: Task<Void, Never>?
 
     /// Every conversation pair in this MVP includes English by default, and
     /// Translation framework availability is inherently pairwise rather than
@@ -90,7 +94,10 @@ final class LanguageManagementViewModel: ObservableObject {
         } else {
             switch await LanguageAvailability().status(from: .init(identifier: pivotLanguageID), to: .init(identifier: language.id)) {
             case .installed: translation = .downloaded
-            case .supported: translation = .notDownloaded
+            case .supported:
+                translation = translationDownloadsInFlight.contains(language.id)
+                    ? .downloading
+                    : .notDownloaded
             case .unsupported: translation = .unavailable
             @unknown default: translation = .unavailable
             }
@@ -113,8 +120,8 @@ final class LanguageManagementViewModel: ObservableObject {
     /// isn't do we consult the iOS 26 inventory — which, unlike the legacy
     /// one, can report a `.notDownloaded` state this app can actually act on.
     private func speechStatus(for locale: Locale, languageID: String) async -> ComponentStatus {
-        if let progress = speechDownloadProgress[languageID] {
-            return .downloading(progress: progress)
+        if speechDownloadsInFlight.contains(languageID) {
+            return .downloading
         }
         if await SpeechRecognitionService.legacyOnDeviceSupport(for: locale) {
             return .downloaded
@@ -122,7 +129,7 @@ final class LanguageManagementViewModel: ObservableObject {
         guard #available(iOS 26.0, *) else { return .unavailable }
         switch await SpeechAssetService().status(for: locale) {
         case .installed: return .downloaded
-        case .downloading: return .downloading(progress: 0)
+        case .downloading: return .downloading
         case .notInstalled: return .notDownloaded
         case .unsupported: return .unavailable
         }
@@ -137,6 +144,8 @@ final class LanguageManagementViewModel: ObservableObject {
         startSpeechAssetDownload(for: id)
 
         guard id != pivotLanguageID else { return }
+        translationDownloadsInFlight.insert(id)
+        startTranslationPolling()
         let configuration = TranslationSession.Configuration(
             source: .init(identifier: pivotLanguageID),
             target: .init(identifier: id)
@@ -157,41 +166,85 @@ final class LanguageManagementViewModel: ObservableObject {
         }
     }
 
+    /// Installs the on-device speech asset. Runs to completion once started —
+    /// the system ignores cancellation (see `SpeechAssetService.install`) — so
+    /// there's no handle to keep beyond the in-flight marker that stops a
+    /// second tap starting a duplicate.
     private func startSpeechAssetDownload(for id: String) {
         guard #available(iOS 26.0, *) else { return }
-        guard speechDownloadProgress[id] == nil else { return }
+        guard !speechDownloadsInFlight.contains(id) else { return }
 
         let locale = Locale(identifier: id)
         let service = SpeechAssetService()
 
         Task {
             guard await service.status(for: locale) == .notInstalled else { return }
-            speechDownloadProgress[id] = 0
+            speechDownloadsInFlight.insert(id)
+            defer { speechDownloadsInFlight.remove(id) }
 
             do {
-                try await service.install(locale: locale) { fraction in
-                    Task { @MainActor in
-                        self.speechDownloadProgress[id] = fraction
-                    }
-                }
+                try await service.install(locale: locale) { _ in }
                 await service.reserveIfPossible(locale: locale)
             } catch {
                 print("Speech asset install failed for \(id): \(error)")
             }
 
-            speechDownloadProgress[id] = nil
             await refreshAllStatuses()
         }
+    }
+
+    /// The Translation framework gives no completion callback we can trust —
+    /// `prepareTranslation()` can stay suspended indefinitely after the user
+    /// dismisses the sheet, even while the pack keeps downloading in the
+    /// background. Polling availability is how a finished pack gets noticed
+    /// without the user pulling to refresh.
+    private func startTranslationPolling() {
+        guard translationPollTask == nil else { return }
+        translationPollTask = Task {
+            // Bounded, because a dismissed sheet may mean nothing is
+            // downloading at all — and a row that says "Downloading…"
+            // forever would be its own lie. Ten minutes is comfortably
+            // longer than a pack takes (~7 min measured in Phase 1).
+            var ticksRemaining = 120
+            while !Task.isCancelled && !translationDownloadsInFlight.isEmpty && ticksRemaining > 0 {
+                ticksRemaining -= 1
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                await refreshAllStatuses()
+                for id in translationDownloadsInFlight
+                where packs.first(where: { $0.id == id })?.translation == .downloaded {
+                    translationDownloadsInFlight.remove(id)
+                }
+            }
+            translationDownloadsInFlight.removeAll()
+            translationPollTask = nil
+            await refreshAllStatuses()
+        }
+    }
+
+    private func stopTranslationPollingIfIdle() {
+        guard translationDownloadsInFlight.isEmpty else { return }
+        translationPollTask?.cancel()
+        translationPollTask = nil
     }
 
     /// Called by the hosting view once `.translationTask` vends the session
     /// for `pendingDownloadConfiguration`.
     func handleDownloadSession(_ session: TranslationSession) async {
+        let target = pendingDownloadConfiguration?.target?.maximalIdentifier
         defer { pendingDownloadConfiguration = nil }
         do {
             try await session.prepareTranslation()
         } catch {
             print("Translation download failed: \(error)")
+        }
+        // Only clears if this call actually returned; when the user dismisses
+        // the sheet it never does, and the poll above is what eventually
+        // notices the pack landing.
+        if let target, let id = candidateLanguages.first(where: {
+            Locale.Language(identifier: $0.id).maximalIdentifier == target
+        })?.id {
+            translationDownloadsInFlight.remove(id)
+            stopTranslationPollingIfIdle()
         }
         await refreshAllStatuses()
     }

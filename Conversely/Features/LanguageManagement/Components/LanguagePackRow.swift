@@ -9,30 +9,23 @@ struct LanguagePackRow: View {
     let onDownload: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            HStack(alignment: .center) {
-                HStack(spacing: Theme.Spacing.sm) {
-                    Text(pack.language.flag)
-                        .font(.system(size: 28))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(pack.language.englishName)
-                            .font(Theme.Typography.titleMd)
-                            .foregroundStyle(Theme.Colors.textPrimary)
-                        Text(subtitle)
-                            .font(Theme.Typography.bodySm)
-                            .foregroundStyle(Theme.Colors.textSecondary)
-                    }
+        HStack(alignment: .center) {
+            HStack(spacing: Theme.Spacing.sm) {
+                Text(pack.language.flag)
+                    .font(.system(size: 28))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(pack.language.englishName)
+                        .font(Theme.Typography.titleMd)
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                    Text(subtitle)
+                        .font(Theme.Typography.bodySm)
+                        .foregroundStyle(Theme.Colors.textSecondary)
                 }
-
-                Spacer()
-
-                trailingControl
             }
 
-            if let progress = pack.downloadProgress {
-                ProgressView(value: progress)
-                    .tint(Theme.Colors.primary)
-            }
+            Spacer()
+
+            trailingControl
         }
         .padding(Theme.Spacing.md)
         .background(Theme.Colors.surfaceContainer, in: RoundedRectangle(cornerRadius: Theme.Radius.lg))
@@ -40,8 +33,10 @@ struct LanguagePackRow: View {
     }
 
     private var subtitle: String {
-        if let progress = pack.downloadProgress {
-            return "Downloading… \(Int(progress * 100))%"
+        if pack.isInProgress {
+            // No percentage is possible for either downloadable leg, so the
+            // spinner carries "something is happening" and this says what.
+            return "Downloading…"
         }
         if pack.hasGap {
             return "\(pack.language.localizedName) • not supported on this device"
@@ -61,6 +56,7 @@ struct LanguagePackRow: View {
         } else if pack.isInProgress {
             ProgressView()
                 .controlSize(.small)
+                .tint(Theme.Colors.primary)
         } else if pack.hasGap {
             // No download would fix this one, so don't offer a button that
             // can't deliver.
@@ -84,7 +80,11 @@ struct LanguagePackRow: View {
             onDownload: {}
         )
         LanguagePackRow(
-            pack: LanguagePackStatus(language: .japanese, speech: .downloading(progress: 0.68), translation: .notDownloaded, voice: .downloaded, approximateSizeMB: 490),
+            pack: LanguagePackStatus(language: .japanese, speech: .downloading, translation: .notDownloaded, voice: .downloaded, approximateSizeMB: 490),
+            onDownload: {}
+        )
+        LanguagePackRow(
+            pack: LanguagePackStatus(language: .chinese, speech: .downloaded, translation: .downloading, voice: .downloaded, approximateSizeMB: 460),
             onDownload: {}
         )
         LanguagePackRow(

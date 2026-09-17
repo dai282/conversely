@@ -137,18 +137,54 @@ final class LanguageScanRunner: ObservableObject {
                 return
             }
 
-            let progress = request.progress
+            // `progress` is a computed getter, so this probe checks both
+            // readings: the object captured once up front (what
+            // SpeechAssetService did, and which reported a frozen 0%) versus
+            // re-reading `request.progress` on every tick. Logs unit counts
+            // and object identity too, to tell "never updates" apart from
+            // "updates a different object than the one we held".
+            let captured = request.progress
             let reporter = Task {
                 while !Task.isCancelled {
-                    append("  download progress: \(Int(progress.fractionCompleted * 100))%")
-                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    let live = request.progress
+                    append(String(
+                        format: "  captured=%.3f live=%.3f units=%lld/%lld indeterminate=%@ sameObject=%@",
+                        captured.fractionCompleted,
+                        live.fractionCompleted,
+                        live.completedUnitCount,
+                        live.totalUnitCount,
+                        live.isIndeterminate ? "yes" : "no",
+                        live === captured ? "yes" : "no"
+                    ))
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
                 }
             }
 
             let start = Date()
-            try await request.downloadAndInstall()
+            let installTask = Task { try await request.downloadAndInstall() }
+
+            // `--cancel-after=<seconds>` aborts partway, which is how the
+            // progress reading gets measured on a locale we don't want to
+            // actually install — and doubles as a test of whether
+            // `Progress.cancel()` really stops the download.
+            if let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--cancel-after=") }),
+               let seconds = Double(arg.dropFirst("--cancel-after=".count)) {
+                Task {
+                    try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                    append("  --- cancelling after \(seconds)s ---")
+                    request.progress.cancel()
+                    installTask.cancel()
+                }
+            }
+
+            do {
+                try await installTask.value
+                append("downloadAndInstall() finished in \(String(format: "%.1f", Date().timeIntervalSince(start)))s")
+            } catch {
+                append("downloadAndInstall() threw after \(String(format: "%.1f", Date().timeIntervalSince(start)))s: \(error)")
+            }
             reporter.cancel()
-            append("downloadAndInstall() finished in \(String(format: "%.1f", Date().timeIntervalSince(start)))s")
+            append("progress after stop: \(request.progress.fractionCompleted), isCancelled=\(request.progress.isCancelled)")
 
             let after = await AssetInventory.status(forModules: [transcriber])
             append("Status after: \(after)")
