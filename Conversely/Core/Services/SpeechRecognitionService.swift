@@ -35,13 +35,31 @@ final class SpeechRecognitionService {
     /// now. `SpeechAssetService` reports whether a currently-false locale
     /// can be made true by downloading.
     func supportsOnDeviceRecognition(locale: Locale) async -> Bool {
-        if SFSpeechRecognizer(locale: locale)?.supportsOnDeviceRecognition == true {
+        if await Self.legacyOnDeviceSupport(for: locale) {
             return true
         }
         if #available(iOS 26.0, *) {
             return await SpeechAssetService().status(for: locale) == .installed
         }
         return false
+    }
+
+    /// Whether the legacy *Assistant* asset for this locale is on disk.
+    ///
+    /// Both `SFSpeechRecognizer.init` and `supportsOnDeviceRecognition` block
+    /// on a synchronous XPC round-trip. Calling them straight from an async
+    /// context stalls a cooperative thread — and the main one, from a
+    /// `@MainActor` view model refreshing every language in a loop. That's
+    /// what the runtime's "unsafeForcedSync called from Swift Concurrent
+    /// context" diagnostic is pointing at. Hopping onto a plain GCD queue
+    /// keeps the blocking work off the concurrency pool entirely.
+    static func legacyOnDeviceSupport(for locale: Locale) async -> Bool {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let supported = SFSpeechRecognizer(locale: locale)?.supportsOnDeviceRecognition == true
+                continuation.resume(returning: supported)
+            }
+        }
     }
 
     /// Streams transcripts as buffers arrive; finishes when the recognizer

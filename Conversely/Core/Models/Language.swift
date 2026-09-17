@@ -14,6 +14,9 @@ struct Language: Identifiable, Hashable {
     static let french = Language(id: "fr-FR", flag: "🇫🇷", englishName: "French", localizedName: "Français")
     static let german = Language(id: "de-DE", flag: "🇩🇪", englishName: "German", localizedName: "Deutsch")
     static let japanese = Language(id: "ja-JP", flag: "🇯🇵", englishName: "Japanese", localizedName: "日本語")
-    static let russian = Language(id: "ru-RU", flag: "🇷🇺", englishName: "Russian", localizedName: "Русский")
+    // Russian is deliberately absent: neither speech engine can transcribe it
+    // on-device (`SpeechTranscriber` has no ru model, and the legacy
+    // recognizer's Assistant asset isn't installable from an app), so it could
+    // only ever be a translation target — useless for a spoken conversation.
     static let chinese = Language(id: "zh-Hans-CN", flag: "🇨🇳", englishName: "Chinese (Simplified)", localizedName: "简体中文")
 }

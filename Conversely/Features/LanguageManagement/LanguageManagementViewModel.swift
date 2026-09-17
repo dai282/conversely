@@ -39,7 +39,7 @@ final class LanguageManagementViewModel: ObservableObject {
     /// candidate language's status is checked against.
     private let pivotLanguageID = "en-US"
     private let candidateLanguages: [Language] = [
-        .english, .vietnamese, .spanish, .french, .german, .japanese, .russian, .chinese,
+        .english, .vietnamese, .spanish, .french, .german, .japanese, .chinese,
     ]
 
     init() {
@@ -60,19 +60,23 @@ final class LanguageManagementViewModel: ObservableObject {
     var availablePacks: [LanguagePackStatus] { packs.filter { !$0.isFullyReady } }
 
     func refreshAllStatuses() async {
+        // Fetched once per refresh rather than per language: `speechVoices()`
+        // enumerates every installed voice on the device, and does it
+        // synchronously (see `installedVoiceLanguages`).
+        let voiceLanguages = await Self.installedVoiceLanguages()
         var updated: [LanguagePackStatus] = []
         for language in candidateLanguages {
-            updated.append(await status(for: language))
+            updated.append(await status(for: language, voiceLanguages: voiceLanguages))
         }
         packs = updated
     }
 
-    private func status(for language: Language) async -> LanguagePackStatus {
+    private func status(for language: Language, voiceLanguages: [String]) async -> LanguagePackStatus {
         let locale = Locale(identifier: language.id)
         let speech = await speechStatus(for: locale, languageID: language.id)
 
         let languageCode = locale.language.languageCode?.identifier ?? language.id
-        let voice: ComponentStatus = AVSpeechSynthesisVoice.speechVoices().contains { $0.language.hasPrefix(languageCode) }
+        let voice: ComponentStatus = voiceLanguages.contains { $0.hasPrefix(languageCode) }
             ? .downloaded
             : .unavailable
 
@@ -110,7 +114,7 @@ final class LanguageManagementViewModel: ObservableObject {
         if let progress = speechDownloadProgress[languageID] {
             return .downloading(progress: progress)
         }
-        if SFSpeechRecognizer(locale: locale)?.supportsOnDeviceRecognition == true {
+        if await SpeechRecognitionService.legacyOnDeviceSupport(for: locale) {
             return .downloaded
         }
         guard #available(iOS 26.0, *) else { return .unavailable }
@@ -190,6 +194,17 @@ final class LanguageManagementViewModel: ObservableObject {
         await refreshAllStatuses()
     }
 
+    /// `speechVoices()` blocks while it walks the installed voice catalogue.
+    /// Same reasoning as `SpeechRecognitionService.legacyOnDeviceSupport` —
+    /// off the cooperative pool so it can't stall the main thread mid-refresh.
+    private static func installedVoiceLanguages() async -> [String] {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(returning: AVSpeechSynthesisVoice.speechVoices().map(\.language))
+            }
+        }
+    }
+
     func openSystemSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
@@ -204,6 +219,6 @@ final class LanguageManagementViewModel: ObservableObject {
     /// these are rough placeholder estimates, not measured values.
     private static let approximateSizeMB: [String: Int] = [
         "en-US": 380, "vi-VN": 410, "es-ES": 395, "fr-FR": 420,
-        "de-DE": 405, "ja-JP": 490, "ru-RU": 435, "zh-Hans-CN": 460,
+        "de-DE": 405, "ja-JP": 490, "zh-Hans-CN": 460,
     ]
 }
