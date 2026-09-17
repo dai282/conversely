@@ -72,6 +72,7 @@ struct ConversationView: View {
                 languageA: viewModel.languageA,
                 languageB: viewModel.languageB,
                 activeSpeaker: viewModel.activeSpeaker,
+                isProcessing: viewModel.isProcessing,
                 onTap: viewModel.tapMic
             )
             .padding(Theme.Spacing.md)
