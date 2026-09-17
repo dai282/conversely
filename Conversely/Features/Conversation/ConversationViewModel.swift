@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import Translation
+import Combine
 
 /// Drives Screen 1 with the real STT -> Translation -> TTS pipeline built in
 /// Phase 1 (see DEVELOPMENT_PLAN.md, Phase 2). `tapMic` runs
@@ -20,22 +21,46 @@ final class ConversationViewModel: ObservableObject {
     @Published var liveTranscript: String = ""
 
     private let translationService: TranslationService
+    private let languageManagementViewModel: LanguageManagementViewModel
     private let speechRecognitionService = SpeechRecognitionService()
     private let audioCaptureService = AudioCaptureService()
     private let speechSynthesisService = SpeechSynthesisService()
 
     private var recognitionTask: Task<Void, Never>?
     private var didRequestPermissions = false
+    private var languageManagementCancellable: AnyCancellable?
 
-    init(languageA: Language = .english, languageB: Language = .vietnamese, translationService: TranslationService) {
+    /// Languages this screen's dropdowns can offer — only ones fully ready
+    /// (Speech + Translation + Voice all present, per Language Management's
+    /// compound status), so an unready language can never be selected in
+    /// the first place rather than caught after the fact.
+    var availableLanguages: [Language] {
+        languageManagementViewModel.downloadedPacks.map(\.language)
+    }
+
+    init(
+        languageA: Language = .english,
+        languageB: Language = .vietnamese,
+        translationService: TranslationService,
+        languageManagementViewModel: LanguageManagementViewModel
+    ) {
         self.languageA = languageA
         self.languageB = languageB
         self.translationService = translationService
+        self.languageManagementViewModel = languageManagementViewModel
         translationService.configure(
             languageA: Self.localeLanguage(for: languageA),
             languageB: Self.localeLanguage(for: languageB)
         )
         requestPermissionsIfNeeded()
+
+        // LanguageManagementViewModel is a separate ObservableObject; without
+        // forwarding its changes, `availableLanguages` could go stale here
+        // (e.g. right after a new download completes) until something else
+        // happens to re-render this screen.
+        languageManagementCancellable = languageManagementViewModel.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
     }
 
     private func requestPermissionsIfNeeded() {
@@ -55,6 +80,24 @@ final class ConversationViewModel: ObservableObject {
 
     func swapLanguages() {
         swap(&languageA, &languageB)
+        translationService.configure(
+            languageA: Self.localeLanguage(for: languageA),
+            languageB: Self.localeLanguage(for: languageB)
+        )
+    }
+
+    /// Picks a language for one side. Ignored if it matches the other
+    /// side's current language — the picker UI already disables that
+    /// option, this is just the backstop.
+    func selectLanguage(_ language: Language, for side: Speaker) {
+        switch side {
+        case .languageA:
+            guard language != languageB else { return }
+            languageA = language
+        case .languageB:
+            guard language != languageA else { return }
+            languageB = language
+        }
         translationService.configure(
             languageA: Self.localeLanguage(for: languageA),
             languageB: Self.localeLanguage(for: languageB)

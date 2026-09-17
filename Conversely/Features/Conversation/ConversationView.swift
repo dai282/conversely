@@ -9,6 +9,9 @@ struct ConversationView: View {
                 LanguageSelectorBar(
                     languageA: viewModel.languageA,
                     languageB: viewModel.languageB,
+                    availableLanguages: viewModel.availableLanguages,
+                    onSelectA: { viewModel.selectLanguage($0, for: .languageA) },
+                    onSelectB: { viewModel.selectLanguage($0, for: .languageB) },
                     onSwap: viewModel.swapLanguages
                 )
 
@@ -96,6 +99,11 @@ struct ConversationView: View {
 }
 
 #Preview {
-    ConversationView(viewModel: ConversationViewModel(translationService: TranslationService()))
-        .preferredColorScheme(.dark)
+    ConversationView(
+        viewModel: ConversationViewModel(
+            translationService: TranslationService(),
+            languageManagementViewModel: LanguageManagementViewModel()
+        )
+    )
+    .preferredColorScheme(.dark)
 }

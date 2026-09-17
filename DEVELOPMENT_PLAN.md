@@ -93,9 +93,12 @@ Of the three components, only **Translation** can actually be downloaded (`Trans
 
 ## Phase 4 (M4) — Error States & Validation
 
-- [ ] Redirect to Language Management (with the missing pack highlighted) when a mic is tapped for an unready language
+- [x] Language selector dropdowns now scope to fully-downloaded languages only — an unready language can't be selected at all, replacing the originally-planned "redirect to Language Management when a mic is tapped for an unready language." Prevention beats a reactive redirect: the invalid state (mic tapped for a language that isn't ready) can no longer occur in the first place.
+- [x] Each side's dropdown excludes (greys out, doesn't hide) whichever language the *other* side currently has selected, so the same language can never be picked on both sides.
 - [ ] Warning banners for languages with partial on-device support
 - [ ] Confirm correct behavior fully offline (airplane mode test)
+
+**Implementation note:** `ConversationViewModel` now depends on `LanguageManagementViewModel` (shared instance, injected via `RootTabView`) to read `downloadedPacks` as the source of truth for which languages are selectable — rather than duplicating the real availability-check logic that already lives there. Since they're separate `ObservableObject`s, `ConversationViewModel` forwards `languageManagementViewModel.objectWillChange` to its own so the dropdown list can't go stale (e.g. right after finishing a download on the Languages tab).
 
 ### The on-device STT availability problem, diagnosed
 

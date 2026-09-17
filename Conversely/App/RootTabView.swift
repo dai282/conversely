@@ -11,13 +11,18 @@ import Translation
 struct RootTabView: View {
     @StateObject private var translationService: TranslationService
     @StateObject private var conversationViewModel: ConversationViewModel
-    @StateObject private var languageManagementViewModel = LanguageManagementViewModel()
+    @StateObject private var languageManagementViewModel: LanguageManagementViewModel
 
     init() {
         let translationService = TranslationService()
+        let languageManagementViewModel = LanguageManagementViewModel()
         _translationService = StateObject(wrappedValue: translationService)
+        _languageManagementViewModel = StateObject(wrappedValue: languageManagementViewModel)
         _conversationViewModel = StateObject(
-            wrappedValue: ConversationViewModel(translationService: translationService)
+            wrappedValue: ConversationViewModel(
+                translationService: translationService,
+                languageManagementViewModel: languageManagementViewModel
+            )
         )
     }
 
