@@ -4,8 +4,14 @@ import SwiftUI
 struct ConverselyApp: App {
     var body: some Scene {
         WindowGroup {
-            RootTabView()
-                .preferredColorScheme(.dark)
+            Group {
+                if CommandLine.arguments.contains("--pipeline-test") {
+                    PipelineTestHostView()
+                } else {
+                    RootTabView()
+                }
+            }
+            .preferredColorScheme(.dark)
         }
     }
 }
