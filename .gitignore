@@ -19,6 +19,7 @@ xcuserdata/
 
 # XcodeGen output (regenerate with `xcodegen generate`)
 *.xcodeproj
+Generated/
 
 # Swift Package Manager
 .swiftpm/
