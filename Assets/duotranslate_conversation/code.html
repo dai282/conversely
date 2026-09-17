@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en" style=""><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&amp;family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#131314;color:#E8EAED;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;font-family:'Google Sans',Roboto,system-ui,-apple-system,sans-serif;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface": "#131314", "surface-container": "#1E1F20", "surface-container-high": "#282A2C", "surface-container-highest": "#333538", "outline-variant": "#444746", "outline": "#8E918F", "primary": "#8AB4F8", "primary-container": "#004A77", "on-primary-container": "#C2E7FF", "on-primary": "#04315A", "on-surface": "#E8EAED", "on-surface-variant": "#9AA0A6", "secondary-container": "#3C4043", "success-muted": "#81C995", "success-container": "#1E382B" }, borderRadius: { "DEFAULT": "0.5rem", "xl": "1rem", "2xl": "1.5rem", "3xl": "2rem", "full": "9999px" }, fontFamily: { sans: ["'Google Sans'", "Roboto", "sans-serif"] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style></head><body class="bg-[#131314] text-[#E8EAED] flex flex-col min-h-screen selection:bg-primary/30 selection:text-primary"><!-- Header: Google Translate Clean App Bar --><header class="fixed top-0 inset-x-0 z-50 bg-[#131314]/90 backdrop-blur-md pt-safe border-b border-transparent transition-colors"><div class="h-14 px-4 flex items-center justify-between"><div class="flex items-center gap-2.5"><div class="flex items-center gap-2"><span class="text-[19px] font-medium tracking-tight text-[#E8EAED]">Conversely</span><div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#1E2E22] border border-[#2E4A35]"><span class="w-1.5 h-1.5 rounded-full bg-[#81C995]"></span><span class="text-[11px] font-medium tracking-wide text-[#81C995]">Offline</span></div></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-24 bg-[#131314]"><div class="flex flex-col flex-1 w-full px-4 select-none">
+<!-- Google Translate Floating Language Switcher Bar -->
+<section class="py-2.5 sticky top-14 z-40 bg-[#131314]/95 backdrop-blur-sm">
+<div class="flex items-center justify-between bg-[#1E1F20] border border-[#333538] rounded-full p-1 shadow-sm">
+<!-- Language A Chip -->
+<button class="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-full hover:bg-[#282A2C] active:bg-[#333538] transition-colors" type="button">
+<span class="text-[15px] font-medium text-[#E8EAED] tracking-tight">English</span>
+<span class="material-symbols-outlined text-[18px] text-[#9AA0A6]">arrow_drop_down</span>
+</button>
+<!-- Swap Icon Button -->
+<button aria-label="Swap Languages" class="w-8 h-8 rounded-full flex items-center justify-center text-primary hover:bg-[#282A2C] active:scale-95 transition-all shrink-0" type="button">
+<span class="material-symbols-outlined text-[19px]">swap_horiz</span>
+</button>
+<!-- Language B Chip -->
+<button class="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-full hover:bg-[#282A2C] active:bg-[#333538] transition-colors" type="button">
+<span class="text-[15px] font-medium text-[#E8EAED] tracking-tight">Tiếng Việt</span>
+<span class="material-symbols-outlined text-[18px] text-[#9AA0A6]">arrow_drop_down</span>
+</button>
+</div>
+<!-- Soft Mode Pill Sub-info -->
+</section>
+<!-- Material You Conversation Stream -->
+<section class="flex flex-col gap-4 py-2 flex-1" id="conversation-stream">
+<!-- Bubble 1: Speaker A (Left, Neutral Dark Elevated Card with external Audio button on right) -->
+<article class="flex flex-col items-start max-w-[95%] self-start">
+<div class="flex items-center gap-1.5 mb-1 ml-2 text-[11px] text-[#9AA0A6]">
+<span class="font-medium text-[#BDC1C6]">English</span>
+<span class="">•</span>
+<span class="">10:42 AM</span>
+</div>
+<div class="flex items-end gap-2 w-full">
+<div class="relative bg-[#282A2C] border border-[#333538] rounded-3xl rounded-tl-md px-4 py-3.5 shadow-sm flex-1">
+<!-- Primary Translation -->
+<p class="text-[16px] leading-[23px] text-[#E8EAED] font-normal tracking-tight">
+          Ga xe lửa gần nhất ở đâu?
+        </p>
+<!-- Original Transcription -->
+<p class="text-[13px] leading-[18px] text-[#9AA0A6] mt-1.5 pt-1.5 border-t border-[#37393C] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-[#9AA0A6]">hearing</span>
+<span class="">Where is the nearest train station?</span>
+</p>
+</div>
+<!-- Enlarged Audio Button Outside (Right) -->
+<button aria-label="Listen translation" class="tts-play-btn w-11 h-11 rounded-full bg-[#282A2C] border border-[#333538] text-[#C4C7C5] hover:text-[#8AB4F8] hover:bg-[#333538] active:scale-95 active:bg-[#004A77] active:text-[#C2E7FF] flex items-center justify-center transition-all shrink-0 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[22px]">volume_up</span>
+</button>
+</div>
+</article>
+<!-- Bubble 2: Speaker B (Right, Google Blue Tonal Container with external Audio button on left) -->
+<article class="flex flex-col items-end max-w-[95%] self-end">
+<div class="flex items-center gap-1.5 mb-1 mr-2 text-[11px] text-[#9AA0A6]">
+<span class="">10:42 AM</span>
+<span class="">•</span>
+<span class="font-medium text-[#BDC1C6]">Tiếng Việt</span>
+</div>
+<div class="flex items-end gap-2 w-full justify-end">
+<!-- Enlarged Audio Button Outside (Left) -->
+<button aria-label="Listen translation" class="tts-play-btn w-11 h-11 rounded-full bg-[#1E2530] border border-[#2B3B4E] text-[#C4C7C5] hover:text-[#8AB4F8] hover:bg-[#28384A] active:scale-95 active:bg-[#004A77] active:text-[#C2E7FF] flex items-center justify-center transition-all shrink-0 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[22px]">volume_up</span>
+</button>
+<div class="relative bg-[#1E2A38] border border-[#2B3B4E] rounded-3xl rounded-tr-md px-4 py-3.5 shadow-sm flex-1">
+<!-- Primary Translation -->
+<p class="text-[16px] leading-[23px] text-[#E8EAED] font-normal tracking-tight">
+          Go straight for two more intersections, then turn right.
+        </p>
+<!-- Original Transcription -->
+<p class="text-[13px] leading-[18px] text-[#9AA0A6] mt-1.5 pt-1.5 border-t border-[#2B3B4E] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-[#9AA0A6]">hearing</span>
+<span class="">Đi thẳng hai ngã tư nữa rồi rẽ phải.</span>
+</p>
+</div>
+</div>
+</article>
+<!-- Bubble 3: Speaker A (Left, Neutral Dark Elevated Card with external Audio button on right) -->
+<article class="flex flex-col items-start max-w-[95%] self-start">
+<div class="flex items-center gap-1.5 mb-1 ml-2 text-[11px] text-[#9AA0A6]">
+<span class="font-medium text-[#BDC1C6]">English</span>
+<span class="">•</span>
+<span class="">Just now</span>
+</div>
+<div class="flex items-end gap-2 w-full">
+<div class="relative bg-[#282A2C] border border-[#333538] rounded-3xl rounded-tl-md px-4 py-3.5 shadow-sm flex-1">
+<!-- Primary Translation -->
+<p class="text-[16px] leading-[23px] text-[#E8EAED] font-normal tracking-tight">
+          Cảm ơn bạn rất nhiều! Tôi có thể đi bộ đến đó được không?
+        </p>
+<!-- Original Transcription -->
+<p class="text-[13px] leading-[18px] text-[#9AA0A6] mt-1.5 pt-1.5 border-t border-[#37393C] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-[#9AA0A6]">hearing</span>
+<span class="">Thank you so much! Can I walk there?</span>
+</p>
+</div>
+<!-- Enlarged Audio Button Outside (Right) -->
+<button aria-label="Listen translation" class="tts-play-btn w-11 h-11 rounded-full bg-[#282A2C] border border-[#333538] text-[#C4C7C5] hover:text-[#8AB4F8] hover:bg-[#333538] active:scale-95 active:bg-[#004A77] active:text-[#C2E7FF] flex items-center justify-center transition-all shrink-0 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[22px]">volume_up</span>
+</button>
+</div>
+</article>
+<!-- Realtime Transcription Feedback State (Hidden by default) -->
+<div class="flex items-center gap-3 p-3.5 rounded-2xl bg-[#1E2A38] border border-[#2B3B4E] transition-all" id="live-transcription-card">
+<div class="w-8 h-8 rounded-full bg-[#8AB4F8] text-[#04315A] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px] animate-spin">sync</span>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-[11px] font-medium text-[#8AB4F8] uppercase tracking-wider">Listening...</span>
+<span class="text-[14px] text-[#E8EAED] truncate font-normal">"Khoảng mười phút đi bộ..."</span>
+</div>
+</div>
+</section>
+<!-- Google Translate Conversation Mic Controls Footer Deck -->
+<footer class="mt-auto pt-3 pb-2 flex flex-col gap-2.5">
+<!-- Audio State / Instruction -->
+<div class="flex items-center justify-center text-center text-[#9AA0A6] text-xs pb-0.5">
+</div>
+<!-- Dual Google Mic Targets -->
+<div class="grid grid-cols-2 gap-3">
+<!-- Speaker A (English) -->
+<button class="relative flex flex-col items-center justify-center py-4 px-3 rounded-3xl bg-[#1E1F20] border border-[#333538] hover:bg-[#282A2C] active:bg-[#333538] active:scale-[0.98] transition-all group" id="mic-btn-a" type="button">
+<div class="w-14 h-14 rounded-full bg-[#282A2C] group-hover:bg-[#333538] flex items-center justify-center text-[#8AB4F8] mb-2.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[28px]">mic</span>
+</div>
+<span class="text-[14px] font-medium text-[#E8EAED] leading-tight">English</span>
+</button>
+<!-- Speaker B (Vietnamese) -->
+<button class="relative flex flex-col items-center justify-center py-4 px-3 rounded-3xl bg-[#1E2530] border border-[#2A3849] hover:bg-[#243040] active:bg-[#2A3849] active:scale-[0.98] transition-all group" id="mic-btn-b" type="button">
+<div class="w-14 h-14 rounded-full bg-[#8AB4F8] flex items-center justify-center text-[#04315A] mb-2.5 transition-transform group-active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-[28px]">mic</span>
+</div>
+<span class="text-[14px] font-medium text-[#E8EAED] leading-tight">Tiếng Việt</span>
+</button>
+</div>
+</footer>
+</div>
+<script>
+  (function() {
+    const micA = document.getElementById('mic-btn-a');
+    const micB = document.getElementById('mic-btn-b');
+    const liveCard = document.getElementById('live-transcription-card');
+    const ttsButtons = document.querySelectorAll('.tts-play-btn');
+
+    let activeSpeaker = null;
+
+    function resetMics() {
+      liveCard.classList.add('hidden');
+      activeSpeaker = null;
+    }
+
+    if (micA) {
+      micA.addEventListener('click', function() {
+        if (activeSpeaker === 'A') {
+          resetMics();
+        } else {
+          resetMics();
+          activeSpeaker = 'A';
+          liveCard.classList.remove('hidden');
+          const title = liveCard.querySelector('span:first-child');
+          const transcript = liveCard.querySelector('span:last-child');
+          if (title) title.textContent = 'Listening to English...';
+          if (transcript) transcript.textContent = '"Is it far from here?..."';
+        }
+      });
+    }
+
+    if (micB) {
+      micB.addEventListener('click', function() {
+        if (activeSpeaker === 'B') {
+          resetMics();
+        } else {
+          resetMics();
+          activeSpeaker = 'B';
+          liveCard.classList.remove('hidden');
+          const title = liveCard.querySelector('span:first-child');
+          const transcript = liveCard.querySelector('span:last-child');
+          if (title) title.textContent = 'Listening to Vietnamese...';
+          if (transcript) transcript.textContent = '"Khoảng mười phút đi bộ..."';
+        }
+      });
+    }
+
+    ttsButtons.forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const icon = this.querySelector('.material-symbols-outlined');
+        if (icon) {
+          icon.textContent = 'graphic_eq';
+          this.classList.add('text-[#8AB4F8]', 'border-[#8AB4F8]');
+          setTimeout(() => {
+            icon.textContent = 'volume_up';
+            this.classList.remove('text-[#8AB4F8]', 'border-[#8AB4F8]');
+          }, 1200);
+        }
+      });
+    });
+  })();
+</script></main><!-- Google Material 3 Style Bottom Navigation Bar --><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-[#1E1F20] border-t border-[#2D2F31]" data-active-classes="text-primary"><div class="flex justify-around items-center h-16 px-3"><a aria-current="page" class="flex flex-col items-center justify-center gap-1 flex-1 py-1 text-primary group" data-path="face-to-face-duo" href="#"><div class="px-5 py-1 rounded-full bg-[#004A77] text-[#C2E7FF] transition-all flex items-center justify-center"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">translate</span></div><span class="text-[11px] font-medium tracking-tight text-[#E8EAED]">Converse</span></a><a class="flex flex-col items-center justify-center gap-1 flex-1 py-1 text-[#9AA0A6] hover:text-[#E8EAED] transition-colors group" data-path="offline-language-models" href="#"><div class="px-5 py-1 rounded-full group-hover:bg-[#282A2C] transition-all flex items-center justify-center"><span class="material-symbols-outlined text-[20px]">offline_pin</span></div><span class="text-[11px] font-medium tracking-tight">Languages</span></a></div></nav></body></html>
