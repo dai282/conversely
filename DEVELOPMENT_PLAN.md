@@ -107,7 +107,11 @@ Symptom: Spanish's `supportsOnDeviceRecognition` was `false` for a long stretch,
   - Proven distinct: after `downloadAndInstall()` put `fr_FR` into `SpeechTranscriber.installedLocales`, `supportsOnDeviceRecognition("fr-FR")` was *still* `false` and the `No Assistant asset` line still printed.
 - **Coverage differs between the two engines**, so neither alone suffices. `SpeechTranscriber` supports 30 locales (de, en, es, fr, it, ja, ko, pt, yue, zh families) and notably **not Vietnamese** — the PRD's flagship language, which works only via the legacy recognizer. `SFSpeechRecognizer` covers more languages but offers no install path.
 - **Resolution:** `SpeechRecognitionService` is now hybrid — `SpeechTranscriber`/`SpeechAnalyzer` when it supports the locale and the asset is installed, legacy `SFSpeechRecognizer` otherwise. `SpeechAssetService` wraps `AssetInventory`, and the Language Management Download button now installs the speech asset *and* the Translation pack, so adding a language is entirely in-app. Installed locales are `reserve`d (cap: `maximumReservedLocales`, 5) so the system doesn't reclaim them.
-- **Russian has no on-device STT on either engine** (`legacySTT=false`, `SpeechTranscriber` unsupported) while Translation supports it — so it can be a translation target but never a speaking side, and will always show a Speech gap.
+- **Russian has no on-device STT on either engine** (`legacySTT=false`, `SpeechTranscriber` unsupported) while Translation supports it — so it could only ever be a translation target, never a speaking side. Dropped from the offered languages for that reason; the `--language-scan` diagnostic still covers it, so it can be reinstated if Apple ships a `ru` transcriber model.
+
+**Verified on device:** French installed entirely in-app (speech asset via `AssetInventory`, translation pack via the system sheet) and transcribes correctly through the `SpeechAnalyzer` path.
+
+**Also fixed here:** `SFSpeechRecognizer.init`/`supportsOnDeviceRecognition` and `AVSpeechSynthesisVoice.speechVoices()` each block on synchronous work, and were being called from the `@MainActor` view model once per language per refresh — stalling the main thread and tripping the runtime's `unsafeForcedSync called from Swift Concurrent context` diagnostic. Both now hop onto a GCD queue, and the voice catalogue is enumerated once per refresh instead of once per language.
 
 ## Phase 5 (M5) — Polish & QA
 
