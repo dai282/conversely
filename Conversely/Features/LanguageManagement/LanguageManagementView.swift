@@ -8,8 +8,8 @@ struct LanguageManagementView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                    section(title: "DOWNLOADED", count: viewModel.downloadedPacks.count, packs: viewModel.downloadedPacks)
-                    section(title: "AVAILABLE", count: nil, packs: viewModel.availablePacks)
+                    section(title: "DOWNLOADED", packs: viewModel.downloadedPacks)
+                    section(title: "AVAILABLE", packs: viewModel.availablePacks)
 
                     manageInSettingsBanner
                 }
@@ -78,30 +78,22 @@ struct LanguageManagementView: View {
                 }
             }
         } label: {
+            // No background or border of our own: the toolbar already draws a
+            // container around its items, and adding a circle inside it read
+            // as a pill wrapped around a circle.
             Text(viewModel.displayLanguage.flag)
                 .font(.system(size: 18))
-                .frame(width: 36, height: 36)
-                .background(Theme.Colors.surfaceContainerHigh, in: Circle())
-                .overlay(Circle().stroke(Theme.Colors.outlineVariant, lineWidth: 1))
         }
         .accessibilityLabel("Change display language")
     }
 
     @ViewBuilder
-    private func section(title: String, count: Int?, packs: [LanguagePackStatus]) -> some View {
+    private func section(title: String, packs: [LanguagePackStatus]) -> some View {
         if !packs.isEmpty {
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                HStack {
-                    Text(title)
-                        .font(Theme.Typography.labelLg)
-                        .foregroundStyle(Theme.Colors.primary)
-                    Spacer()
-                    if let count {
-                        Text("\(count) language\(count == 1 ? "" : "s")")
-                            .font(Theme.Typography.bodySm)
-                            .foregroundStyle(Theme.Colors.textSecondary)
-                    }
-                }
+                Text(title)
+                    .font(Theme.Typography.labelLg)
+                    .foregroundStyle(Theme.Colors.primary)
 
                 ForEach(packs) { pack in
                     LanguagePackRow(
