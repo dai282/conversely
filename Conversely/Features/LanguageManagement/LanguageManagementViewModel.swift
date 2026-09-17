@@ -36,7 +36,17 @@ final class LanguageManagementViewModel: ObservableObject {
     private let candidateLanguages: [Language] = [.english, .vietnamese, .spanish, .french, .german, .japanese]
 
     init() {
-        Task { await refreshAllStatuses() }
+        Task {
+            await refreshAllStatuses()
+            // `LanguageAvailability` can under-report an already-installed
+            // pair as merely `.supported` right at cold launch — its
+            // backing service seems to need a moment to finish warming up.
+            // A quick recheck a beat later self-heals this so the user
+            // doesn't have to pull-to-refresh to see a language they've
+            // already downloaded.
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            await refreshAllStatuses()
+        }
     }
 
     var downloadedPacks: [LanguagePackStatus] { packs.filter(\.isFullyReady) }
@@ -90,7 +100,24 @@ final class LanguageManagementViewModel: ObservableObject {
     /// shows the system's own download sheet for this language pair.
     func startDownload(for id: String) {
         guard id != pivotLanguageID else { return }
-        pendingDownloadConfiguration = .init(source: .init(identifier: pivotLanguageID), target: .init(identifier: id))
+        let configuration = TranslationSession.Configuration(
+            source: .init(identifier: pivotLanguageID),
+            target: .init(identifier: id)
+        )
+
+        // `.translationTask` only restarts when its configuration actually
+        // changes. If the previous attempt's session never resolved (the
+        // user dismissed the system sheet instead of completing or
+        // explicitly cancelling it, so `handleDownloadSession` is still
+        // suspended in `prepareTranslation()`), `pendingDownloadConfiguration`
+        // never got reset to nil -- so pressing Download again for the same
+        // language would reassign an equal value and silently do nothing.
+        // Routing through nil first guarantees SwiftUI sees a real
+        // transition and retriggers the task regardless of stuck state.
+        pendingDownloadConfiguration = nil
+        Task { @MainActor in
+            self.pendingDownloadConfiguration = configuration
+        }
     }
 
     /// Called by the hosting view once `.translationTask` vends the session
